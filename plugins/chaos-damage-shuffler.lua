@@ -206,6 +206,7 @@ plugin.description =
 	-Power Blade 2 (NES), 1p
 	-Rainbow Islands - The Story of Bubble Bobble 2 (NES), 1p
 	-Resident Evil (PSX), 1p - includes OG, Director's Cut, Dualshock and True Director's Cut Hack
+	-Resident Evil 2 (PSX), 1p - includes Regular & DualShock Ver (recommend using multi-disk bundler to work between disks)
 	-Ristar (Genesis/Mega Drive), 1p
 	-Rock 'n Roll Racing (SNES), 1p
 	-Rocket Knight Adventures (Genesis/Mega Drive), 1p
@@ -2079,6 +2080,60 @@ local function resident_evil_1(gamemeta)
 			or playercontrol == 8 and ingamestate == 1 and ingamestate ~= previousstate then
 			return true
 			elseif ingamestate == 1 and ingamestate ~= previousstate and cutscene == 2 then
+			return true
+			else
+			return false
+		end
+	end
+end
+	local function resident_evil_2(gamemeta)
+		return function(data)
+
+		-- To avoid swapping when poisoned since poison does not inflict any sort of hit other than drain your health. We will use the address for when the player is in control.
+		-- This address will also have unique values for what damages the player. A value of 2 is for typical hits, 5 is for when grabbed by zombies, crows or punched by MR.X. 3 is when you die normally & turns to 7 then to 0. 6 is when killed by zombies/birkinG3/FinalG/Dogs
+		-- Deaths work a bit diffirent compared to RE1. Strike deaths go from 3 to 7 to 0. Grab deaths go to 6 then to 0. Zombies/Birkin/Dogs are value 6.
+		-- MR.X instakill is a value of 5, rest is 3 to 7 to 0. Super Mr.X kill strike does 2 to 1 to 2 to 1 to 5. Final G is 6 but health is stuck at 12 and doesn't go above the health limit like the rest of the deaths.
+		-- Crows when shaken off after they attack will drop to the floor. This causes the hit indicator to go from 5 to 2.
+		-- Leon & Claire have their own address when it comes to hit indictors
+
+		local playercontrolleon = gamemeta.hitleon()
+		local previouscontrolleon = data.hitleon or 5
+		data.hitleon = playercontrolleon
+
+		local playercontrolclaire = gamemeta.hitclaire()
+		local previouscontrolclaire = data.hitclaire or 5
+		data.hitclaire = playercontrolclaire
+
+		-- Addresses for Timer when it reaches 0 goes straight to a 65535 when it explodes then goes to 0 at main menu. Leon & Claire have their own timer addresses
+
+		local timerleon = gamemeta.timeleon()
+		local previoustimerleon = data.timeleon
+		data.timeleon = timerleon
+
+		local timerclaire = gamemeta.timeclaire()
+		local previoustimerclaire = data.timeclaire
+		data.timeclaire = timerclaire
+
+		-- Because of a certain kill animation (Super Tyrant) that makes the hit indicator changes to values that would make it swap rapidly. We will use the health address to tell us when it happens and to avoid the swapping. And of course Leon & Claire have their own health addresses
+
+		local healthleon = gamemeta.hpleon()
+		local previoushealthleon = data.hpleon
+		data.hpleon = healthleon
+
+		local healthclaire = gamemeta.hpclaire()
+		local previoushealthclaire = data.hpclaire
+		data.hpclaire = healthclaire
+
+		if playercontrolleon == 2 and playercontrolleon ~= previouscontrolleon and previouscontrolleon ~= 5 and previoushealthleon <= 200
+		or playercontrolleon == 5 and playercontrolleon ~= previouscontrolleon and previoushealthleon <= 200
+		or playercontrolleon == 6 and playercontrolleon ~= previouscontrolleon
+		or playercontrolleon == 3 and playercontrolleon ~= previouscontrolleon
+		or playercontrolclaire == 2 and playercontrolclaire ~= previouscontrolclaire and previouscontrolclaire ~= 5 and previoushealthclaire <= 200
+		or playercontrolclaire == 5 and playercontrolclaire ~= previouscontrolclaire and previoushealthclaire <= 200
+		or playercontrolclaire == 6 and playercontrolclaire ~= previouscontrolclaire
+		or playercontrolclaire == 3 and playercontrolclaire ~= previouscontrolclaire then
+			return true
+			elseif timerleon == 65535 and timerleon ~= previoustimerleon or timerclaire == 65535 and timerclaire ~= previoustimerclaire then
 			return true
 			else
 			return false
@@ -6386,7 +6441,27 @@ local gamedata = {
 		hit=function() return memory.read_u8(0x0C51A8, "MainRAM") end,
 		state=function() return memory.read_u8(0x0C8454, "MainRAM") end,
 		cut=function() return memory.read_u8(0x0CF63B, "MainRAM") end,
-		delay=60
+		delay=90
+	},
+	['ResidentEvil2_PS1']={ -- Resident Evil 2 [PS1 - NSTC]
+		func=resident_evil_2,
+		hitleon=function() return memory.read_u8(0x0C7D28, "MainRAM") end,
+		hitclaire=function() return memory.read_u8(0x0C7AF0, "MainRAM") end,
+		hpleon=function() return memory.read_u8(0x0C7E7A, "MainRAM") end,
+		hpclaire=function() return memory.read_u8(0x0C7C42, "MainRAM") end,
+		timeleon=function() return memory.read_u32_le(0x0CC95E, "MainRAM") end,
+		timeclaire=function() return memory.read_u32_le(0x0CC726, "MainRAM") end,
+		delay=90
+	},
+	['ResidentEvil2_PS1_Dualshock']={ -- Resident Evil 2 Dualshock Version [PS1 - NSTC]
+		func=resident_evil_2,
+		hitleon=function() return memory.read_u8(0x0CFBFC, "MainRAM") end,
+		hitclaire=function() return memory.read_u8(0x0CFBB4, "MainRAM") end,
+		hpleon=function() return memory.read_u8(0x0CFD4E, "MainRAM") end,
+		hpclaire=function() return memory.read_u8(0x0CFD06, "MainRAM") end,
+		timeleon=function() return memory.read_u32_le(0x0D4832, "MainRAM") end,
+		timeclaire=function() return memory.read_u32_le(0x0D47EA, "MainRAM") end,
+		delay=90
 	},
 	['Pictionary_NES']={ -- Pictionary NES
 		func=function()

@@ -5800,6 +5800,7 @@ local gamedata = {
 		p1livesaddr=function() return 0x7F5B end,
 		maxlives=function() return 8 end,
 		ActiveP1=function() return true end, -- p1 is always active!
+		delay=33,
 	},
 	['GarfieldAWoG_NES']={ -- Garfield: A Week of Garfield, NES
 		func=health_swap,

@@ -54,13 +54,18 @@ E0DA571CDDCB8D069B36C2DF254334F7C532133E CV64_EUR_N64                 -- Castlev
 879EAD98F197FD05EDDA867655DA5B1CE25AA5B8 CVLOD_NA_N64                 -- Castlevania: Legacy of Darkness (North America)
 0C6817082DD322477C63F3C91A99C1F34AF0065C CVLOD_EUR_N64                -- Castlevania: Legacy of Darkness (Europe)
 ABD71FE01EBB201BCC133074DB1DD8C5253776C7 CV_AoS                       -- Castlevania Aria of Sorrow GBA (US)
+35D714A3EB6916CA9C2D97F7FCEAD0C91A825069 CV_AoS                       -- Castlevania Aria of Sorrow GBA (drop rates patch)
 CC0F25B8783FB83CB4588D1C111BDC18         CV_DoS                       -- Castlevania Dawn of Sorrow DS (USA) (Decrypted)
 9618BA557F37542D62E8D947C7302C34         CV_DoS                       -- Castlevania Dawn of Sorrow DS (USA) (Encrypted)
+A418C6D500026C3835D8D6CC10B2F2CD299CBC95 CV_DoS                       -- Castlevania Dawn of Sorrow DS (Definitive Edition + Romhack)
+F251ACA91C6E753B24768C8121E57192D136CF00 CV_DoS                       -- Castlevania Dawn of Sorrow DS (Zero character hack)
 -- add the DoS definitive edition hashes here, there's a lot of them
 FD269B247DCDEE553ED5E90AB71942FB         CV_PoR                       -- Castlevania Portrait of Ruin DS (USA) (Decrypted)
 2EDD57540CAE45842FBD19C45A4214F9         CV_PoR                       -- Castlevania Portrait of Ruin DS (USA) (Encrypted)
+056ED52CC9CFCDCA07733EB3AFD73CE49DC93B5A CV_PoR                       -- Castlevania Portrait of Ruin DS (refined patch)
 E13BDCF706989486DF939556EEB42ECE         CV_OoE                       -- Castlevania Order of Ecclesia DS (USA) (Decrypted)
 F2091B51B84266C3CA2F0056C849CB45         CV_OoE                       -- Castlevania Order of Ecclesia DS (USA) (Encrypted)
+613B9A2DCF8EBC9F492D96CDB047A2EF5309FA45 CV_OoE                       -- Castlevania Order of Ecclesia DS (1.11 balance patch)
 
 -- Mario Block
 9286A2DB471D51713E9B75E68B47FFBF11E2D40B MB_NES                       -- Mario Bros NES (WW)
@@ -414,6 +419,7 @@ FDD3D68C7B5B2F9DC7EC50D9888B0A8EDBAAEC28 StarTropics_NES              -- StarTro
 92F1DC8FC7C9420CF26D063611FA7D9067197740 StreetFighter2010_NES        -- Street Fighter 2010: The Final Fight (US)
 93F7E8AD3FA1846DE7E749304071888D0D2492FC StreetFighter2010_NES        -- Street Fighter 2010: The Final Fight (US, modded by endrift)
 CB75D5A6919B61EFE917BEA5762C1CB7         StreetsOfRage2_GEN           -- Streets of Rage 2 (US)
+CB6BA4E1F84277EF03FCB32B2CFA2D28FA9C6F1F StreetsOfRage2_GEN           -- Bubsy in Streets of Rage 2 (romhack)
 0345970417F5BBF1634878BDC1DDA75A5C68E624 SunsetRiders_ARC             -- Sunset Riders (Arcade, 2p, US)
 19CDF861C543F9C9CD9C8B6B70ADEB1C         SunsetRiders_GEN             -- Sunset Riders (US, Genesis)
 50F0D77323A5967AA329C72E7A2D926ED158F667 SunsetRiders_SNES            -- Sunset Riders (US, SNES)

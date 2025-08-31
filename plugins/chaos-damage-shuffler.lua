@@ -243,6 +243,7 @@ plugin.description =
 	-The Magical Quest 3: Mickey to Donald - Magical Adventure 3 (SNES), 1-2p
 	-Tiny Toon Adventures (NES), 1p
 	-Titenic (bootleg) (NES), 1p
+	-Twisted Metal 2 (PSX), 1p
 	-U.N. Squadron (SNES), 1p
 	-Vice: Project Doom (NES), 1p
 	-WarioWare, Inc.: Mega Microgame$! (GBA), 1p - bonus games including 2p are pending
@@ -6682,6 +6683,19 @@ local gamedata = {
 		maxlives=function() return 10 end, -- one more than displayed
 		ActiveP1=function() return mainmemory.read_u8(0x400) > 0 end,
 		ActiveP2=function() return mainmemory.read_u8(0x500) > 0 end,
+	},
+	['TwistedMetal2_PSX']={ -- Twisted Metal 2, PSX
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_u8(0x187D00, "MainRAM") end,
+		p1getlc=function() return memory.read_u8(0x164770, "MainRAM") end,
+		maxhp=function() return 150 end,
+		CanHaveInfiniteLives=true,
+		LivesWhichRAM=function() return "MainRAM" end,
+		p1livesaddr=function() return 0x164770 end,
+		maxlives=function() return 2 end,
+		ActiveP1=function() return true end,
+		gmode=function() return memory.read_u8(0x1FEF4C, "MainRAM") == 0 end,
+		grace=60,
 	},
 }
 

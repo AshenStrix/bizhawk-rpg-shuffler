@@ -172,6 +172,7 @@ plugin.description =
 	-I.Q.: Intelligent Qube (PS1), 1p (2p someday?)
 	-Jackal (NES), 1-2p
 	-Jackie Chan's Action Kung-Fu (NES), 1p
+	-James Bond Jr. (SNES), 1p
 	-Jaws (NES), 1p
 	-Journey to Silius (NES), 1p
 	-Jungle Book, The (NES, SNES, Genesis/Mega Drive), 1p
@@ -6696,6 +6697,22 @@ local gamedata = {
 		ActiveP1=function() return true end,
 		gmode=function() return memory.read_u8(0x1FEF4C, "MainRAM") == 0 end,
 		grace=60,
+	},
+	['JamesBondJr_SNES']={ -- James Bond Jr., SNES
+		func=twoplayers_withlives_swap, 
+		-- it's a 1-player game, but we'll treat the kid and the vehicles as two players as their health/lives are stored separately
+		p1gethp=function() return memory.read_u8(0x02e7, "WRAM") end,
+		p1getlc=function() return memory.read_u8(0x02e6, "WRAM") end,
+		p2gethp=function() return 0 end, -- vehicles die instantly
+		p2getlc=function() return memory.read_u8(0x110C, "WRAM") end,
+		maxhp=function() return 5 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x02e6 end,
+		p2livesaddr=function() return 0x110C end,
+		LivesWhichRAM=function() return "WRAM" end,
+		maxlives=function() return 5 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+		ActiveP2=function() return true end, -- p2 is always active!
 	},
 }
 

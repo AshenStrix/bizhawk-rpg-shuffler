@@ -47,3 +47,7 @@ luac.out
 
 # Editor settings
 .vscode/
+/.vs
+/.gitignore
+/.gitignore
+/.gitignore

@@ -244,9 +244,13 @@ plugin.description =
 	-The Magical Quest 3: Mickey to Donald - Magical Adventure 3 (SNES), 1-2p
 	-Tiny Toon Adventures (NES), 1p
 	-Titenic (bootleg) (NES), 1p
+	-Tony Hawk's Pro Skater (PSX), 1p
+	-Tony Hawk's Pro Skater 2 (PSX), 1p
+	-Tony Hawk's Pro Skater 3 (PSX), 1p
+	-Tony Hawk's Pro Skater 4 (PSX), 1p
 	-Twisted Metal 2 (PSX), 1p
 	-U.N. Squadron (SNES), 1p
-	-Ulitmate Mortal Kombat 3 (SNES), 1p (for now)
+	-Ultimate Mortal Kombat 3 (SNES), 1p (for now)
 	-Vice: Project Doom (NES), 1p
 	-WarioWare, Inc.: Mega Microgame$! (GBA), 1p - bonus games including 2p are pending
 	-Wild Guns (SNES), 1p
@@ -2177,6 +2181,20 @@ local function resident_evil_3(gamemeta)
 			return false
 		end
 	end
+end
+
+local function thps_swap(gamemeta)
+    return function(data)
+        local pointerOne = gamemeta.get_pointer_one() -- Pointer that is set to match pointer two when user presses confirm to enter gameplay; otherwise points to stale data
+        local pointerTwo = gamemeta.get_pointer_two() -- Pointer that is set to 0 when not in gameplay, and updates to point to the game stats during level load
+        if pointerTwo ~= 0x0 and pointerOne == pointerTwo then
+            local bailsChanged, numBails, prevBails = update_prev("bails", gamemeta.get_bails())
+            if bailsChanged and numBails > prevBails then -- User has bailed one more time this run than when last we checked
+                return true
+            end
+        end
+        return false
+    end
 end
 
 local function always_swap(gamemeta)
@@ -6793,6 +6811,42 @@ local gamedata = {
 		maxlives=function() return 9 end,
 		ActiveP1=function() return true end,
 		grace=40,
+	},
+	['THPS1_PS1']={ -- Tony Hawk's Pro Skater, PS1
+		func=thps_swap,
+		get_pointer_one=function() return memory.read_u32_le(0xD17C8, "MainRAM") end,
+		get_pointer_two=function() return memory.read_u32_le(0xD19A4, "MainRAM") end,
+		get_bails=function()
+			local pointer = memory.read_u32_le(0xD19A4, "MainRAM") & 0xFFFFFF
+			return memory.read_u16_le(pointer + 0x930, "MainRAM")
+		end,
+	},
+	['THPS2_PS1']={ -- Tony Hawk's Pro Skater 2, PS1
+		func=thps_swap,
+		get_pointer_one=function() return memory.read_u32_le(0xD291C, "MainRAM") end,
+		get_pointer_two=function() return memory.read_u32_le(0xD67E0, "MainRAM") end,
+		get_bails=function()
+			local pointer = memory.read_u32_le(0xD67E0, "MainRAM") & 0xFFFFFF
+			return memory.read_u16_le(pointer + 0x170, "MainRAM")
+		end,
+	},
+	['THPS3_PS1']={ -- Tony Hawk's Pro Skater 3, PS1
+		func=thps_swap,
+		get_pointer_one=function() return memory.read_u32_le(0xD2E00, "MainRAM") end,
+		get_pointer_two=function() return memory.read_u32_le(0xD68C4, "MainRAM") end,
+		get_bails=function()
+			local pointer = memory.read_u32_le(0xD68C4, "MainRAM") & 0xFFFFFF
+			return memory.read_u16_le(pointer + 0x170, "MainRAM")
+		end,
+	},
+	['THPS4_PS1']={ -- Tony Hawk's Pro Skater 4, PS1
+		func=thps_swap,
+		get_pointer_one=function() return memory.read_u32_le(0xD532C, "MainRAM") end,
+		get_pointer_two=function() return memory.read_u32_le(0xD8C58, "MainRAM") end,
+		get_bails=function()
+			local pointer = memory.read_u32_le(0xD8C58, "MainRAM") & 0xFFFFFF
+			return memory.read_u16_le(pointer + 0x170, "MainRAM")
+		end,
 	},
 }
 

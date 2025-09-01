@@ -246,6 +246,7 @@ plugin.description =
 	-Titenic (bootleg) (NES), 1p
 	-Twisted Metal 2 (PSX), 1p
 	-U.N. Squadron (SNES), 1p
+	-Ulitmate Mortal Kombat 3 (SNES), 1p (for now)
 	-Vice: Project Doom (NES), 1p
 	-WarioWare, Inc.: Mega Microgame$! (GBA), 1p - bonus games including 2p are pending
 	-Wild Guns (SNES), 1p
@@ -6757,6 +6758,41 @@ local gamedata = {
 		maxlives=function() return 5 end,
 		ActiveP1=function() return true end, -- p1 is always active!
 		ActiveP2=function() return true end, -- p2 is always active!
+	},
+	['UltimateMortalKombat3_SNES']={ -- Ultimate Mortal Kombat 3, SNES
+		func=function()
+			return function()
+				-- what address is the game using to track p1's damage? it tracks how much damage has been done in a combo before resetting to 0
+				local umk3_damaged_address_header = memory.read_u8(0x36CF, "WRAM")
+				-- the game picks from 0x01 to 0x0B for the first 4 bits and tacks on 0xAA to the end to yield the desired address to track
+				-- so, shuffle when it goes up, require that it starts at 0, and don't shuffle on blocks (damage < 8)
+				local umk3_p1_damaged_address = umk3_damaged_address_header*16*16 + 0xAA
+				local p1_damage_changed, p1_damage_curr, p1_damage_prev = update_prev("p1_damage", memory.read_u8(umk3_p1_damaged_address, "WRAM"))
+				-- throws are tracked separately, it appears that 0x38 at specific addresses gives the "start thrown animation" sequence
+				local p1_thrown_changed, p1_thrown_curr, p1_thrown_prev = update_prev("p1_thrown", memory.read_u8(0x8A03, "WRAM") == 0x38)
+				-- tracking p2's wins for end-of-round shuffling
+				local p2_wins_changed, p2_wins_curr, p2_wins_prev = update_prev("p2_wins", memory.read_u8(0x38A4, "WRAM"))
+				-- SHUFFLE CONDITIONS:
+				-- if we are on a screen where you cannot fight, for example, menus, don't swap - continue screen is fine
+				if memory.read_u8(0x3A7E, "WRAM") > 0x09 and not memory.read_u8(0x3A7E, "WRAM") == 0x0F then return false end
+				-- if p2 just won round 1, or has 2 wins and the match rolls over to the continue screen, then swap
+				-- but don't swap right on winning their second match, to avoid doubles
+				if (p2_wins_curr == 2 and p2_wins_prev == 1) then return false end
+				if (p2_wins_curr == 1 and p2_wins_prev == 0) or (p2_wins_curr == 0 and p2_wins_prev == 2) then return true, 8 end
+				-- if the damage counter goes up from 0, swap; this will keep combos from repeatedly swapping
+				-- if the player has 0 HP, don't swap; let round 1/match win handle that so you swap after fatality, friendship, etc.
+				if p1_damage_changed and p1_damage_curr >= 8 and p1_damage_prev == 0 and not p2_wins_changed and not (memory.read_u8(0x36F4, "WRAM") == 0) then return true, 6 end
+				-- if the player is thrown, swap
+				if p1_thrown_changed and p1_thrown_curr then return true, 15 end
+				return false
+			end
+		end,
+		CanHaveInfiniteLives=true,
+		LivesWhichRAM=function() return "WRAM" end,
+		p1livesaddr=function() return 0x38AA end,
+		maxlives=function() return 9 end,
+		ActiveP1=function() return true end,
+		grace=40,
 	},
 }
 

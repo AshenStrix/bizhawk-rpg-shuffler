@@ -2076,7 +2076,7 @@ local function resident_evil_1(gamemeta)
 		if playercontrol == 5 and playercontrol ~= previouscontrol 
 		or playercontrol == 2 and playercontrol ~= previouscontrol 
 		or playercontrol == 6 and playercontrol ~= previouscontrol then
-			return true
+			return true, 15
 			elseif playercontrol == 3 and ingamestate == 1 and ingamestate ~= previousstate
 			or playercontrol == 7 and ingamestate == 1 and ingamestate ~= previousstate
 			or playercontrol == 8 and ingamestate == 1 and ingamestate ~= previousstate then
@@ -2134,8 +2134,43 @@ end
 		or playercontrolclaire == 5 and playercontrolclaire ~= previouscontrolclaire and previoushealthclaire <= 200
 		or playercontrolclaire == 6 and playercontrolclaire ~= previouscontrolclaire
 		or playercontrolclaire == 3 and playercontrolclaire ~= previouscontrolclaire then
-			return true
+			return true, 15
 			elseif timerleon == 65535 and timerleon ~= previoustimerleon or timerclaire == 65535 and timerclaire ~= previoustimerclaire then
+			return true
+			else
+			return false
+		end
+	end
+end
+
+local function resident_evil_3(gamemeta)
+	return function(data)
+			
+		-- To avoid swapping when poisoned since poison does not inflict any sort of hit other than drain your health. We will use the address for when the player is in control.
+		-- This address will also have unique values for what damages the player. A value of 2 is for typical hits, 5 is for when grabbed by zombies, crows, nemesis, leech. 3 is when you die normally & turns to 7 then to 0. 6 is when killed by zombies/Dogs/frog hunter/Chimera/nemesis with tentacle slam
+
+		local playercontrol = gamemeta.hit()
+		local previouscontrol = data.hit
+		data.hit = playercontrol
+
+		-- Addresses for Timer when it reaches 0 goes straight to a 65535 when it explodes then goes to 0 at main menu. With the gameover address. This seems kind of redundent to have for now
+
+		--local timer = gamemeta.time()
+		--local previoustimer = data.time
+		--data.time = timer
+
+		-- The Nuke Timer goes to 0 pretty early before the game over. This seems to go value 64 when game overed and I haven't noticed what else this address is for.'
+		
+		local gameovered = gamemeta.gameover()
+		local previousgameovered = data.gameover
+		data.gameover = gameovered
+
+		if playercontrol == 2 and playercontrol ~= previouscontrol 
+		or playercontrol == 3 and playercontrol ~= previouscontrol
+		or playercontrol == 5 and playercontrol ~= previouscontrol
+		or playercontrol == 6 and playercontrol ~= previouscontrol then
+			return true, 15
+			elseif gameovered == 64 and gameovered ~= previousgameovered then
 			return true
 			else
 			return false
@@ -6444,7 +6479,7 @@ local gamedata = {
 		hit=function() return memory.read_u8(0x0C51A8, "MainRAM") end,
 		state=function() return memory.read_u8(0x0C8454, "MainRAM") end,
 		cut=function() return memory.read_u8(0x0CF63B, "MainRAM") end,
-		delay=90
+		delay=15
 	},
 	['ResidentEvil2_PS1']={ -- Resident Evil 2 [PS1 - NSTC]
 		func=resident_evil_2,
@@ -6454,7 +6489,7 @@ local gamedata = {
 		hpclaire=function() return memory.read_u8(0x0C7C42, "MainRAM") end,
 		timeleon=function() return memory.read_u32_le(0x0CC95E, "MainRAM") end,
 		timeclaire=function() return memory.read_u32_le(0x0CC726, "MainRAM") end,
-		delay=90
+		delay=15
 	},
 	['ResidentEvil2_PS1_Dualshock']={ -- Resident Evil 2 Dualshock Version [PS1 - NSTC]
 		func=resident_evil_2,
@@ -6464,7 +6499,15 @@ local gamedata = {
 		hpclaire=function() return memory.read_u8(0x0CFD06, "MainRAM") end,
 		timeleon=function() return memory.read_u32_le(0x0D4832, "MainRAM") end,
 		timeclaire=function() return memory.read_u32_le(0x0D47EA, "MainRAM") end,
-		delay=90
+		delay=15
+	},
+	['ResidentEvil3_PS1']={ -- Resident Evil 3 [PS1 - NSTC]
+		func=resident_evil_3,
+		hit=function() return memory.read_u8(0x0CCBC8, "MainRAM") end,
+		time=function() return memory.read_u16_le(0x0D1F98, "MainRAM") end,
+		hp=function() return memory.read_u8(0x0D1F98, "MainRAM") end,
+		gameover=function() return memory.read_u8(0x0CC858, "MainRAM") end,
+		delay=15
 	},
 	['Pictionary_NES']={ -- Pictionary NES
 		func=function()

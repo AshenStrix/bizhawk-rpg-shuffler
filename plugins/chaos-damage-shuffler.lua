@@ -193,6 +193,7 @@ plugin.description =
 	-Minnesota Fats - Pool Legend (Saturn), 1p story mode
 	-Ms. Pac-Man (Tengen) (NES), 1p
 	-Monopoly (NES), 1-8p (on one controller), shuffles on any human player going bankrupt, going or failing to roll out of jail, and losing money (not when buying, trading, or setting up game)
+	-Mortal Kombat (Genesis/Mega Drive), 1p (for now)
 	-Mystic Warriors (Arcade), 1p
 	-NBA JAM Tournament Edition (PSX), 1p - shuffles on points scored by opponent and on end of quarter
 	-Ninja Gaiden (NES), 1p
@@ -6776,6 +6777,21 @@ local gamedata = {
 		maxlives=function() return 5 end,
 		ActiveP1=function() return true end, -- p1 is always active!
 		ActiveP2=function() return true end, -- p2 is always active!
+	},
+	['MortalKombat1_GEN']={ -- Mortal Kombat, Genesis/Mega Drive
+		-- possibly useful future notes:
+		-- instead of damage directly lowering health, it's put into a "damage buffer" that then lowers health per frame
+		-- when p1 is being damaged, 0xCB56 turns to 0x20 (blinks up to 0x21 and back to 0x20 on a throw)
+		func=iframe_health_swap,
+		is_valid_gamestate=function() return true end,
+		get_iframes=function() return memory.read_u8(0xCABB, "68K RAM") end, -- todo: work out no shuffle on block
+		other_swaps=function() return false end,
+		CanHaveInfiniteLives=true,
+		LivesWhichRAM=function() return "68K RAM" end,
+		p1livesaddr=function() return 0xAB7A end,
+		maxlives=function() return 9 end,
+		ActiveP1=function() return true end, -- if infinite lives are on, p1 will always be active
+		grace=60, -- this should help with punch combos
 	},
 	['UltimateMortalKombat3_SNES']={ -- Ultimate Mortal Kombat 3, SNES
 		func=function()

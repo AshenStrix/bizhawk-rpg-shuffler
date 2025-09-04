@@ -236,6 +236,7 @@ plugin.description =
 	-Super Smash TV (SNES), 1p
 	-TaleSpin (NES), 1p
 	-Tarzan: Lord of the Jungle (unreleased) (SNES), 1p
+	-Tecmo Super Bowl (NES), 1p (on opponent scores, giveaways, giving up first down, failing to get a first down)
 	-Teenage Mutant Ninja Turtles (NES), 1p
 	-Teenage Mutant Ninja Turtles II: The Arcade Game (NES), 1-2p
 	-Teenage Mutant Ninja Turtles III: The Manhattan Project (NES), 1-2p
@@ -2195,6 +2196,224 @@ local function thps_swap(gamemeta)
             end
         end
         return false
+    end
+end
+
+local function tsb_swap(gamemeta)
+	return function(data)
+		-- swap function for Tecmo Super Bowl (NES), 1P ONLY
+		-- OFFENSE swap conditions:
+			-- giveaways (opponent takes possession outside of p1 scoring TD/XP or FG)
+			-- failure to get a first down (down goes up? swap)
+		-- DEFENSE swap conditions:
+			-- opponent points go up
+			-- opponent gets a first down
+		-- need to track:
+			-- possession (on change of possession, check points)
+			-- end of play (on going to playbook screen, check down)
+			-- p1 points
+			-- p2 points
+		-- BONUS SWAPS TO IMPLEMENT:
+			-- lost coin toss
+			-- TODO: INJURIES
+		
+		if data.delayCountdown ~= nil and data.delayCountdown > 0 then
+			--console.log("delayCountdown: "..data.delayCountdown);
+			data.delayCountdown = data.delayCountdown - 1
+			if data.delayCountdown == 0 then
+				--console.log("delayCountdown is 0; swapping");
+				return true;
+			end
+			return false;
+		end
+		
+		-- first, grab the current data
+		local p1_possession_curr = gamemeta.p1_possession()
+		local whatdown_curr = gamemeta.whatdown()
+		local picking_play_curr = gamemeta.picking_play()
+		local p1_points_curr = gamemeta.p1_points()
+		local p2_points_curr = gamemeta.p2_points()
+		
+		-- second, retrieve previous data
+		local p1_possession_prev = data.p1_possession_prev
+		local whatdown_prev = data.whatdown_prev
+		local picking_play_prev = data.picking_play_prev
+		local p1_points_prev = data.p1_points_prev
+		local p2_points_prev = data.p2_points_prev
+		
+		-- next, determine whether to update the data on hand
+		-- points and downs update at less predictable times due to cutscenes, etc.
+		-- so, we want to be careful about when we update and compare these values
+		-- compare points ONLY on change of possession
+		-- compare downs ONLY on entering the playbook
+		
+		-- if possession changed, then compare the scores
+		if picking_play_curr and not picking_play_prev then -- down just changed if the playbook screen just came up
+			if p1_possession_curr and whatdown_curr > whatdown_prev then return true end -- did down just go up? oh, then you didn't get a first down, huh? time to swap.
+			if not p1_possession_curr and whatdown_curr == 0 then return true end -- did they just get a first down? time to swap
+		elseif p1_possession_curr ~= p1_possession_prev then -- possession changed (happens instantly on interceptions and fumble recoveries)
+			if not p1_possession_curr and p1_points_curr == p1_points_prev then return true end -- p1 gave up the ball and didn't score? time to swap.
+			if p1_possession_curr and p2_points_curr > p2_points_prev then return true end -- p2 gave up the ball after a score? time to swap.
+		end
+		
+		-- if down changes, or possession changes, it's time to update all the values for the next drive.
+		data.p1_possession_prev = p1_possession_curr
+		data.whatdown_prev = whatdown_curr
+		data.picking_play_prev = picking_play_curr
+		data.cointoss_lost_prev = cointoss_lost_curr
+		data.p1_points_prev = p1_points_curr
+		data.p2_points_prev = p2_points_curr
+		
+		-- On a kickoff at the start of the half, do not swap.
+		if gamemeta.opening_kickoff() then
+			return false
+		end
+		
+		-- But, if p1 lost the toss, do swap.
+		if gamemeta.lost_the_toss() then
+			data.delayCountdown = 10
+		end
+		
+    end
+end
+
+local function TecmoSuperBowl_NES_swap(gamemeta)
+	return function(data)
+		-- swap function for Tecmo Super Bowl (NES), 1P ONLY
+		-- OFFENSE swap conditions:
+			-- giveaways
+				-- opponent takes possession and p1 didn't score -> swap
+				-- note that opponent already "possesses" ball when kickoff loads, including after a safety
+			-- else, failure to get a first down
+				-- p1 has possession and down goes up -> swap
+		-- DEFENSE swap conditions:
+			-- opponent scores
+				-- 2p points go up by 3+ -> swap on kickoff loading
+				-- require 3+ so that safeties (2 points, change of possession but need to mind the timing) and PATs (1 point) do not double-swap
+			-- opponent starts with possession, calls a play, and gets a first down
+				-- if play picker has appeared once before, check when play picker appears, and if down == 0 -> swap
+		-- Track every frame:
+			-- playbook appears (on going to playbook screen, check if we have seen it yet - if yes, then check down - if down off target, immediate swap)
+			-- scores
+			-- possession, including specifically tracking if 1p is kicking off
+				-- p1 can lose possession in these ways:
+					-- losing the coin toss, if opponent picks to return (registers as loss of possession, happens right away)
+					-- mid-play (interception, fumble) - shuffle right away
+					-- after play (punt returned, turnover on downs, missed FG) - shuffle on play picker loading
+				
+		-- NEED TO STORE FOR TIMED COMPARISONS:
+			-- scores, on load and whenever p1 scores
+			-- play picker exited since we swapped in, true/false
+			-- down (changes on end of play, NOT on same frame that play picker pops up!)
+			-- is p2 kicking off? need this for proper swap timing
+			
+		-- TODO: AVOID/SOLVE SWAPS ON KICKOFF TO START SECOND HALF
+		-- TODO: SWAP ON P1 INJURIES - CAN WE SWAP ON THE WORD "INJURED!" APPEARING OR DISAPPEARING? OR THE MUSIC?
+		
+		-- first, grab the current data
+		local p1_possession_curr = gamemeta.get_p1_possession()
+		local whatdown_curr = gamemeta.get_whatdown()
+		local picking_play_curr = gamemeta.get_picking_play()
+		local p1_points_curr = gamemeta.get_p1_points()
+		local p2_points_curr = gamemeta.get_p2_points()
+		local p2_kickoff_curr = gamemeta.get_p2_kickoff()
+		
+		-- now, retrieve previous data
+		local p1_possession_prev = data.p1_possession_prev
+		local whatdown_prev = data.whatdown_prev
+		local picking_play_prev = data.picking_play_prev
+		local p1_points_prev = data.p1_points_prev
+		local p2_points_prev = data.p2_points_prev
+		local p2_kickoff_prev = data.p2_kickoff_prev
+		
+		-- and store all the current values
+		data.p1_possession_prev = p1_possession_curr
+		data.picking_play_prev = picking_play_curr
+		data.whatdown_prev = whatdown_curr
+		data.p1_points_prev = p1_points_curr
+		data.p2_points_prev = p2_points_curr
+		data.p2_kickoff_prev = p2_kickoff_curr
+		
+		-- next, we need to store three things away for later comparisons
+		-- A - p1 score: store it away on load, and if it goes up, store it again
+		if data.p1_score_on_load == nil then
+			data.p1_score_on_load = p1_points_curr 
+		end
+		
+		-- B - p2 score: only store on load, since we will swap any time this goes up by at least 3 points
+		if data.p2_score_on_load == nil then
+			data.p2_score_on_load = p2_points_curr
+		end
+		
+		if data.p2_scored == nil then
+			data.p2_scored = false
+		end
+		
+		-- C - current down: store on load, update if plays go by without a swap
+		if data.down_at_start_of_play == nil then
+			data.down_at_start_of_play = whatdown_curr
+		end
+		
+		-- D - play picker status: count the number of times we've seen the play picker
+			-- if we haven't seen it at all, that means we came back mid-play to 2p with possession (interception, fumble recovery, onside kick recovered)
+			-- don't shuffle if downs goes to 0, opponent has ball, AND we haven't seen the play picker, as that will be a double swap
+		if data.play_picker_seen == nil then
+			data.play_picker_seen = 0
+		end
+			
+		if picking_play_curr == false and picking_play_prev == true then
+			-- increment this on play picker disappearing
+			data.play_picker_seen = data.play_picker_seen + 1
+		end
+		
+		-- we need to implement a delay for certain swaps, so we will add a countdown here
+		if data.delayCountdown ~= nil and data.delayCountdown > 0 then
+			--console.log("delayCountdown: "..data.delayCountdown);
+			data.delayCountdown = data.delayCountdown - 1
+			if data.delayCountdown == 0 then
+				--console.log("delayCountdown is 0; swapping");
+				return true;
+			end
+			return false;
+		end
+		
+		-- first, swap on p2 scoring a TD or FG, after a 60-frame delay
+		-- any time this happens, when you swap in, p2 will still have the ball
+		if p2_points_prev and p2_points_curr > p2_points_prev + 2 then
+			data.p2_scored = true
+		end
+		
+		-- We will shuffle on scores when it turns to kickoff, because they credit the FG INSTANTLY (it's decided before the cutscene even starts!)
+		if p2_kickoff_curr == true and p2_kickoff_prev == false and data.p2_scored == true then
+			data.delayCountdown = 3
+			data.p2_scored = false
+		end
+		
+		-- next, swap on possession losses by checking if possession changed to p2 ("p1 now has ball" is irrelevant here)
+		if p1_possession_curr == false and p1_possession_prev == true then
+			-- compare p1's score before and after the possession change (the only time we would not swap right away is if p1 scored and is kicking off)
+			if p1_points_curr == data.p1_score_on_load then -- p1 gave up the ball and didn't score? swap now
+				data.delayCountdown = 3
+			else -- p1 is kicking off after a score? update that stored score, and reset "play picker seen" to 0 because it's about to be a new drive for p2
+				data.p1_score_on_load = p1_points_curr
+				data.play_picker_seen = 0
+			end
+		end
+		
+		-- now that we've handled possession changes, we need to check mid-drive failures (p1 doesn't get a first down, or p2 gets one)
+		if picking_play_curr == true and picking_play_prev == false then -- down just changed if the playbook screen just came up
+			if p1_possession_curr and whatdown_curr > data.down_at_start_of_play then -- did down just go up? oh, then you didn't get a first down, huh? swap now
+				data.delayCountdown = 3
+			-- next, we need to swap if the opponent has earned a first down - this would happen after the play picker has been seen at least once
+			elseif p1_possession_curr == false and whatdown_curr == 0 and -- it's p2's ball and first down?
+				picking_play_curr == true and picking_play_prev == false and data.play_picker_seen > 0 then -- and the play picker just showed up, and we've seen them pick a play already? swap now
+				data.delayCountdown = 3
+			-- and, if none of that is true, update the down we saw the last time the play picker came up
+			else
+				data.down_at_start_of_play = whatdown_curr
+			end
+		end
+		
     end
 end
 
@@ -6863,6 +7082,16 @@ local gamedata = {
 			local pointer = memory.read_u32_le(0xD8C58, "MainRAM") & 0xFFFFFF
 			return memory.read_u16_le(pointer + 0x170, "MainRAM")
 		end,
+	},
+	['TecmoSuperBowl_NES']={ -- Tecmo Super Bowl NES
+		func=TecmoSuperBowl_NES_swap,
+		func=TecmoSuperBowl_NES_swap,
+		get_p1_possession=function() return memory.read_u8(0x0070, "RAM") < 0x80 end,
+		get_whatdown=function() return memory.read_u8(0x0077, "RAM") end,
+		get_picking_play=function() return memory.read_u8(0x030A, "RAM") == 0x22 or memory.read_u8(0x030A, "RAM") == 0x1E end,
+		get_p1_points=function() return memory.read_u8(0x0399, "RAM") end,
+		get_p2_points=function() return memory.read_u8(0x039E, "RAM") end,
+		get_p2_kickoff=function() return memory.read_u8(0x0070, "RAM") == 0x48 end,
 	},
 }
 

@@ -154,6 +154,7 @@ plugin.description =
 	-DuckTales (NES), 1p
 	-DuckTales 2 (NES), 1p
 	-Dynamite Headdy (Genesis/Mega Drive), 1p
+	-Earnest Evans, Mega CD
 	-Einhänder (PSX), 1p
 	-F-Zero (SNES), 1p
 	-Family Feud (SNES), 1-2p
@@ -206,9 +207,11 @@ plugin.description =
 	-Pocky & Rocky 2 (SNES), 1-2p
 	-Power Blade (NES), 1p
 	-Power Blade 2 (NES), 1p
+	-Powerslave/Exhumed, Saturn
 	-Rainbow Islands - The Story of Bubble Bobble 2 (NES), 1p
 	-Resident Evil (PSX), 1p - includes OG, Director's Cut, Dualshock and True Director's Cut Hack
 	-Resident Evil 2 (PSX), 1p - includes Regular & DualShock Ver (recommend using multi-disk bundler to work between disks)
+	-Resident Evil 3 (PSX), 1p
 	-Ristar (Genesis/Mega Drive), 1p
 	-Rock 'n Roll Racing (SNES), 1p
 	-Rocket Knight Adventures (Genesis/Mega Drive), 1p
@@ -2060,9 +2063,9 @@ local function iq_swap(gamemeta)
 		return false
 	end
 end
+
 local function resident_evil_1(gamemeta)
 	return function(data)
-
 		-- To avoid swapping when poisoned since poison does not inflict any sort of hit other than drain your health. We will use the address for when the player is in control.
 		-- This address will also have unique values for what damages the player. A value of 2 is for typical hits, 5 is for when grabbed by zombies, 6 is for when grabbed by animals. 3 is when you die normally & 7 is for instakills
 
@@ -2095,9 +2098,8 @@ local function resident_evil_1(gamemeta)
 		end
 	end
 end
-	local function resident_evil_2(gamemeta)
-		return function(data)
-
+local function resident_evil_2(gamemeta)
+	return function(data)
 		-- To avoid swapping when poisoned since poison does not inflict any sort of hit other than drain your health. We will use the address for when the player is in control.
 		-- This address will also have unique values for what damages the player. A value of 2 is for typical hits, 5 is for when grabbed by zombies, crows or punched by MR.X. 3 is when you die normally & turns to 7 then to 0. 6 is when killed by zombies/birkinG3/FinalG/Dogs
 		-- Deaths work a bit diffirent compared to RE1. Strike deaths go from 3 to 7 to 0. Grab deaths go to 6 then to 0. Zombies/Birkin/Dogs are value 6.
@@ -2152,7 +2154,6 @@ end
 
 local function resident_evil_3(gamemeta)
 	return function(data)
-			
 		-- To avoid swapping when poisoned since poison does not inflict any sort of hit other than drain your health. We will use the address for when the player is in control.
 		-- This address will also have unique values for what damages the player. A value of 2 is for typical hits, 5 is for when grabbed by zombies, crows, nemesis, leech. 3 is when you die normally & turns to 7 then to 0. 6 is when killed by zombies/Dogs/frog hunter/Chimera/nemesis with tentacle slam
 
@@ -5245,6 +5246,7 @@ local gamedata = {
 			end
 		end,
 		CanHaveInfiniteLives=true,
+		swap_exceptions=function() return memory.read_u8(0xF4, "WRAM") == 0 end,
 		p1livesaddr=function() return 0x1C end,
 		LivesWhichRAM=function() return "WRAM" end,
 		maxlives=function() return 0x68 end, -- Counts as 69, at least in western versions
@@ -7054,6 +7056,61 @@ local gamedata = {
 				return 0
 			end
 		end,
+	},
+	['PowerslaveExhumed_SAT']={ -- Powerslave/Exhumed, Saturn
+		func=health_swap,
+		get_health=function() return memory.read_u16_be(0x8608A, "Work Ram High") end,
+		is_valid_gamestate=function()
+			if memory.read_u8(0x90DF9, "Work Ram High") ~= 0x11 then
+				return false
+			end
+
+			-- This would go better in swap_exceptions, but going by the current flow of health_swap, is_valid_gamestate is used the same way???
+			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_swapexceptions", memory.read_u16_be(0x4A58A, "Work Ram High"))
+			if hurtfloordrain_curr ~= nil and hurtfloordrain_prev ~= nil and hurtfloordrain_curr >= 0 and hurtfloordrain_prev > 0 then
+				return false -- Lava drain had already started and hasn't stopped
+			end
+
+			-- Everything checks out
+			return true
+		end,
+		--[[swap_exceptions=function() -- TODO: This isn't actually implemented in health_swap
+			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_swapexceptions", memory.read_u16_be(0x4A58A, "Work Ram High"))
+			if hurtfloordrain_curr ~= nil and hurtfloordrain_prev ~= nil and hurtfloordrain_curr > 0 and hurtfloordrain_prev > 0 then
+				return true -- Lava drain had already started and hasn't stopped
+			end
+			return false
+		end,]]
+		other_swaps=function() -- TODO: not necessary???
+			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_otherswaps", memory.read_u16_be(0x4A58A, "Work Ram High"))
+			return hurtfloordrain_changed and hurtfloordrain_prev ~= nil and hurtfloordrain_prev == 0
+		end,
+		grace=90,
+	},
+	['EarnestEvans_SCD']={ -- Earnest Evans, Mega CD
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return math.max((64 * memory.read_s16_be(0xA4AE, "68K RAM")) + memory.read_u16_be(0xA4B0, "68K RAM"), -1) end,
+		p1getlc=function()
+			-- While there is technically a RAM address for continues, it
+			-- makes more sense to shuffle on the continue screen appearing than
+			-- it does the player using up a continue
+			local gameOverState = memory.read_u16_be(0x1588, "68K RAM")
+			if (gameOverState == 0x03 or gameOverState == 0x04) then
+				return -1
+			else
+				return 0
+			end
+		end,
+		maxhp=function() return 320 end,
+		minhp=-1,
+		CanHaveInfiniteLives=true,
+		LivesWhichRAM=function() return "68K RAM" end,
+		p1livesaddr=function() return 0xBF11 end, -- Technically continues
+		maxlives=function() return 5 end, -- Tile used seems to be modulo 10, and only 0-5 show as numbers; an actual value of 0 on the Continue screen immediately triggers a Game Over, however
+		ActiveP1=function() return true end, -- p1 is always active!
+		grace=90, -- TODO: Find good value for health that drains with no I-frames
+	},
+
 }
 
 local backupchecks = {

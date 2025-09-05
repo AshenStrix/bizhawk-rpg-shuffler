@@ -2199,84 +2199,6 @@ local function thps_swap(gamemeta)
     end
 end
 
-local function tsb_swap(gamemeta)
-	return function(data)
-		-- swap function for Tecmo Super Bowl (NES), 1P ONLY
-		-- OFFENSE swap conditions:
-			-- giveaways (opponent takes possession outside of p1 scoring TD/XP or FG)
-			-- failure to get a first down (down goes up? swap)
-		-- DEFENSE swap conditions:
-			-- opponent points go up
-			-- opponent gets a first down
-		-- need to track:
-			-- possession (on change of possession, check points)
-			-- end of play (on going to playbook screen, check down)
-			-- p1 points
-			-- p2 points
-		-- BONUS SWAPS TO IMPLEMENT:
-			-- lost coin toss
-			-- TODO: INJURIES
-		
-		if data.delayCountdown ~= nil and data.delayCountdown > 0 then
-			--console.log("delayCountdown: "..data.delayCountdown);
-			data.delayCountdown = data.delayCountdown - 1
-			if data.delayCountdown == 0 then
-				--console.log("delayCountdown is 0; swapping");
-				return true;
-			end
-			return false;
-		end
-		
-		-- first, grab the current data
-		local p1_possession_curr = gamemeta.p1_possession()
-		local whatdown_curr = gamemeta.whatdown()
-		local picking_play_curr = gamemeta.picking_play()
-		local p1_points_curr = gamemeta.p1_points()
-		local p2_points_curr = gamemeta.p2_points()
-		
-		-- second, retrieve previous data
-		local p1_possession_prev = data.p1_possession_prev
-		local whatdown_prev = data.whatdown_prev
-		local picking_play_prev = data.picking_play_prev
-		local p1_points_prev = data.p1_points_prev
-		local p2_points_prev = data.p2_points_prev
-		
-		-- next, determine whether to update the data on hand
-		-- points and downs update at less predictable times due to cutscenes, etc.
-		-- so, we want to be careful about when we update and compare these values
-		-- compare points ONLY on change of possession
-		-- compare downs ONLY on entering the playbook
-		
-		-- if possession changed, then compare the scores
-		if picking_play_curr and not picking_play_prev then -- down just changed if the playbook screen just came up
-			if p1_possession_curr and whatdown_curr > whatdown_prev then return true end -- did down just go up? oh, then you didn't get a first down, huh? time to swap.
-			if not p1_possession_curr and whatdown_curr == 0 then return true end -- did they just get a first down? time to swap
-		elseif p1_possession_curr ~= p1_possession_prev then -- possession changed (happens instantly on interceptions and fumble recoveries)
-			if not p1_possession_curr and p1_points_curr == p1_points_prev then return true end -- p1 gave up the ball and didn't score? time to swap.
-			if p1_possession_curr and p2_points_curr > p2_points_prev then return true end -- p2 gave up the ball after a score? time to swap.
-		end
-		
-		-- if down changes, or possession changes, it's time to update all the values for the next drive.
-		data.p1_possession_prev = p1_possession_curr
-		data.whatdown_prev = whatdown_curr
-		data.picking_play_prev = picking_play_curr
-		data.cointoss_lost_prev = cointoss_lost_curr
-		data.p1_points_prev = p1_points_curr
-		data.p2_points_prev = p2_points_curr
-		
-		-- On a kickoff at the start of the half, do not swap.
-		if gamemeta.opening_kickoff() then
-			return false
-		end
-		
-		-- But, if p1 lost the toss, do swap.
-		if gamemeta.lost_the_toss() then
-			data.delayCountdown = 10
-		end
-		
-    end
-end
-
 local function TecmoSuperBowl_NES_swap(gamemeta)
 	return function(data)
 		-- swap function for Tecmo Super Bowl (NES), 1P ONLY
@@ -2300,23 +2222,26 @@ local function TecmoSuperBowl_NES_swap(gamemeta)
 					-- losing the coin toss, if opponent picks to return (registers as loss of possession, happens right away)
 					-- mid-play (interception, fumble) - shuffle right away
 					-- after play (punt returned, turnover on downs, missed FG) - shuffle on play picker loading
-				
+			-- is p2 kicking off? needed for proper swap timing
 		-- NEED TO STORE FOR TIMED COMPARISONS:
 			-- scores, on load and whenever p1 scores
 			-- play picker exited since we swapped in, true/false
 			-- down (changes on end of play, NOT on same frame that play picker pops up!)
 			-- is p2 kicking off? need this for proper swap timing
-			
-		-- TODO: AVOID/SOLVE SWAPS ON KICKOFF TO START SECOND HALF
-		-- TODO: SWAP ON P1 INJURIES - CAN WE SWAP ON THE WORD "INJURED!" APPEARING OR DISAPPEARING? OR THE MUSIC?
 		
+		-- if two skipped teams are playing each other and we are watching the score, don't ever swap
+		if not gamemeta.gmode() then
+			return false
+		end
 		-- first, grab the current data
 		local p1_possession_curr = gamemeta.get_p1_possession()
 		local whatdown_curr = gamemeta.get_whatdown()
 		local picking_play_curr = gamemeta.get_picking_play()
 		local p1_points_curr = gamemeta.get_p1_points()
 		local p2_points_curr = gamemeta.get_p2_points()
+		local p1_kickoff_curr = gamemeta.get_p1_kickoff()
 		local p2_kickoff_curr = gamemeta.get_p2_kickoff()
+		local music_cue_curr = gamemeta.get_music_cue()
 		
 		-- now, retrieve previous data
 		local p1_possession_prev = data.p1_possession_prev
@@ -2324,7 +2249,9 @@ local function TecmoSuperBowl_NES_swap(gamemeta)
 		local picking_play_prev = data.picking_play_prev
 		local p1_points_prev = data.p1_points_prev
 		local p2_points_prev = data.p2_points_prev
+		local p1_kickoff_prev = data.p1_kickoff_prev
 		local p2_kickoff_prev = data.p2_kickoff_prev
+		local music_cue_prev = data.music_cue_prev
 		
 		-- and store all the current values
 		data.p1_possession_prev = p1_possession_curr
@@ -2332,38 +2259,39 @@ local function TecmoSuperBowl_NES_swap(gamemeta)
 		data.whatdown_prev = whatdown_curr
 		data.p1_points_prev = p1_points_curr
 		data.p2_points_prev = p2_points_curr
+		data.p1_kickoff_prev = p1_kickoff_curr
 		data.p2_kickoff_prev = p2_kickoff_curr
+		data.music_cue_prev = music_cue_curr
 		
-		-- next, we need to store three things away for later comparisons
+		-- next, we need to store a few things away for later comparisons
 		-- A - p1 score: store it away on load, and if it goes up, store it again
 		if data.p1_score_on_load == nil then
 			data.p1_score_on_load = p1_points_curr 
 		end
-		
 		-- B - p2 score: only store on load, since we will swap any time this goes up by at least 3 points
 		if data.p2_score_on_load == nil then
 			data.p2_score_on_load = p2_points_curr
 		end
-		
 		if data.p2_scored == nil then
 			data.p2_scored = false
 		end
-		
 		-- C - current down: store on load, update if plays go by without a swap
 		if data.down_at_start_of_play == nil then
 			data.down_at_start_of_play = whatdown_curr
 		end
-		
 		-- D - play picker status: count the number of times we've seen the play picker
 			-- if we haven't seen it at all, that means we came back mid-play to 2p with possession (interception, fumble recovery, onside kick recovered)
 			-- don't shuffle if downs goes to 0, opponent has ball, AND we haven't seen the play picker, as that will be a double swap
 		if data.play_picker_seen == nil then
 			data.play_picker_seen = 0
 		end
-			
 		if picking_play_curr == false and picking_play_prev == true then
 			-- increment this on play picker disappearing
 			data.play_picker_seen = data.play_picker_seen + 1
+		end
+		-- E - has the injured music been cued up?
+		if data.p1_injured_music_cued == nil then
+			data.p1_injured_music_cued = false
 		end
 		
 		-- we need to implement a delay for certain swaps, so we will add a countdown here
@@ -2377,18 +2305,32 @@ local function TecmoSuperBowl_NES_swap(gamemeta)
 			return false;
 		end
 		
+		-- SWAPS
 		-- first, swap on p2 scoring a TD or FG, after a 60-frame delay
 		-- any time this happens, when you swap in, p2 will still have the ball
 		if p2_points_prev and p2_points_curr > p2_points_prev + 2 then
 			data.p2_scored = true
 		end
-		
-		-- We will shuffle on scores when it turns to kickoff, because they credit the FG INSTANTLY (it's decided before the cutscene even starts!)
-		if p2_kickoff_curr == true and p2_kickoff_prev == false and data.p2_scored == true then
+		-- We will shuffle on p2 scores when it turns to kickoff, because they credit the FG INSTANTLY (it's decided before the cutscene even starts!)
+		if data.p2_scored == true and 
+			((p2_kickoff_curr == true and p2_kickoff_prev == false) or (p1_kickoff_curr == true and p1_kickoff_prev == false)) -- latter will handle kickoffs back to p2 after halftime if p2 to end 2Q and gets possession to start Q3
+		then
 			data.delayCountdown = 3
 			data.p2_scored = false
 		end
-		
+		-- We need to shuffle if p2 wins the game.
+		if gamemeta.get_end_of_game() == true and p2_points_curr > p1_points_curr
+		then
+			data.delayCountdown = 169 -- wait for scoreboard
+		end
+		-- We need to shuffle if a p1 player gets injured. We'll know because the music (0x2B) played.
+		-- conveniently, music and sound cues only last for one frame
+		if music_cue_curr == 0x2B and p1_possession_curr == true then data.p1_injured_music_cued = true end
+		-- When the cue goes through to silence the music (0x01), swap
+		if music_cue_curr == 0x01 and data.p1_injured_music_cued == true
+		then
+			data.delayCountdown = 3
+		end
 		-- next, swap on possession losses by checking if possession changed to p2 ("p1 now has ball" is irrelevant here)
 		if p1_possession_curr == false and p1_possession_prev == true then
 			-- compare p1's score before and after the possession change (the only time we would not swap right away is if p1 scored and is kicking off)
@@ -2399,7 +2341,6 @@ local function TecmoSuperBowl_NES_swap(gamemeta)
 				data.play_picker_seen = 0
 			end
 		end
-		
 		-- now that we've handled possession changes, we need to check mid-drive failures (p1 doesn't get a first down, or p2 gets one)
 		if picking_play_curr == true and picking_play_prev == false then -- down just changed if the playbook screen just came up
 			if p1_possession_curr and whatdown_curr > data.down_at_start_of_play then -- did down just go up? oh, then you didn't get a first down, huh? swap now
@@ -7085,14 +7026,34 @@ local gamedata = {
 	},
 	['TecmoSuperBowl_NES']={ -- Tecmo Super Bowl NES
 		func=TecmoSuperBowl_NES_swap,
-		func=TecmoSuperBowl_NES_swap,
+		-- do not shuffle if we are watching the scoreboard for skipped in-season games
+		gmode=function() return memory.read_u8(0x0075, "RAM") ~= 0x33 end,
 		get_p1_possession=function() return memory.read_u8(0x0070, "RAM") < 0x80 end,
 		get_whatdown=function() return memory.read_u8(0x0077, "RAM") end,
 		get_picking_play=function() return memory.read_u8(0x030A, "RAM") == 0x22 or memory.read_u8(0x030A, "RAM") == 0x1E end,
-		get_p1_points=function() return memory.read_u8(0x0399, "RAM") end,
-		get_p2_points=function() return memory.read_u8(0x039E, "RAM") end,
+		get_p1_points=function() return
+			math.floor(memory.read_u8(0x0399, "RAM")/16)*10 +
+			(memory.read_u8(0x0399, "RAM") % 16)
+		end, -- this is actually a hex value that just skips A-F on screen. Transformed.
+		get_p2_points=function() return
+			math.floor(memory.read_u8(0x039E, "RAM")/16)*10 +
+			(memory.read_u8(0x039E, "RAM") % 16)
+		end, -- this is actually a hex value that just skips A-F on screen. Transformed.
+		get_p1_kickoff=function() return memory.read_u8(0x0070, "RAM") == 0x8B end,
 		get_p2_kickoff=function() return memory.read_u8(0x0070, "RAM") == 0x48 end,
-	},
+		get_end_of_game=function()
+			-- We will check the scoreboard at the end of the game, and if p2 points are greater than p1 points, swap
+			-- I guess we won't swap on ties. Herm Edwards would not enjoy that but whatever
+			local OT_or_Q4_ended_changed, OT_or_Q4_ended_curr = update_prev("OT_or_Q4_ended", (memory.read_u8(0x0076, "RAM") >= 3 and memory.read_u8(0x002D, "RAM") % 16 >= 0x8 and memory.read_u8(0x002D, "RAM") % 16 <=0xB))
+			return OT_or_Q4_ended_changed and not OT_or_Q4_ended_curr -- wait until the scoreboard shows
+		end,
+		get_music_cue=function() 
+			if memory.read_u8(0x0700, "RAM") == 0x2B or memory.read_u8(0x0700, "RAM") == 0x01 then
+				return memory.read_u8(0x0700, "RAM") 
+			else
+				return 0
+			end
+		end,
 }
 
 local backupchecks = {

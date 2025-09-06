@@ -2648,8 +2648,7 @@ local gamedata = {
 	--MARIO BLOCK
 	['SMB1_NES']={ -- SMB 1 NES
 		func=singleplayer_withlives_swap,
-		p1gethp=function() return memory.read_u8(0x0756, "RAM") + 1 end,
-		-- add 1 because 'base health' is 0 and won't swap unless lives counter goes down
+		p1gethp=function() return memory.read_u8(0x0756, "RAM") end,
 		p1getlc=function() return
 			memory.read_u8(0x075A, "RAM") % 255
 			-- mario if 1p, luigi if 2p, 255 = they game overed
@@ -2658,6 +2657,7 @@ local gamedata = {
 		end,
 		p2getlc=function() return memory.read_u8(0x0761, "RAM") end,
 		maxhp=function() return 2 end,
+		minhp=-1,
 		gmode=function() return memory.read_u8(0x0770, "RAM") == 1 end,
 		-- demo == 0, end of world == 2, game over == 3
 		CanHaveInfiniteLives=true,

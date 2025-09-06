@@ -50,7 +50,7 @@ plugin.description =
 	-Super Mario All-Stars (SNES), 1-2p, with or without World (includes SMB3 battle mode)
 	-Super Mario Land (GB or GBC DX patch), 1p
 	-Super Mario Land 2: 6 Golden Coins (GB or GBC DX patch), 1p
-	-Super Mario 64 (N64), 1p
+	-Super Mario 64 (N64), 1p - including Better Non-Stop hack
 
 	CASTLEVANIA BLOCK
 	-Castlevania (NES), 1p
@@ -3217,6 +3217,38 @@ local gamedata = {
 		LivesWhichRAM=function() return "RDRAM" end,
 		maxlives=function() return 69 end,
 		ActiveP1=function() return memory.read_u8(0x33B173, "RDRAM") > 0 end,
+	},
+	['SM64NonStop_N64']={ -- Super Mario 64 (Better Non-Stop Hack)
+		func=singleplayer_withlives_swap,
+		p1gethp=function()
+			if memory.read_u16_be(0x33B19E, "RDRAM") == 6440 or
+				memory.read_u16_be(0x33B19E, "RDRAM") == 6442 or
+				memory.read_u16_be(0x33B19E, "RDRAM") == 6444
+			then
+				-- these RAM values for "mario state" apply when Mario's being thrown out of a painting after death
+				-- Mario's health gets set to 1 if he dies from falling/quicksand, not 0,
+				-- so there will be two swaps (hp lost + life lost) unless we account for that
+				return 0
+			else
+				return memory.read_u8(0x33B23E, "RDRAM")
+			end
+		end,
+		p1getlc=function() return memory.read_u8(0x33B23D, "RDRAM") end,
+		maxhp=function() return 8 end,
+		delay=10, -- handles health ticking down from big falls, hits for >1 hp, etc.
+		gmode=function() return memory.read_u8(0x33B193, "RDRAM") > 0 end, -- "mario status" variable, 0 if game hasn't started
+		gettogglecheck=function() return
+			memory.read_u8(0x33B193, "RDRAM") > 0
+			-- Mario is in water or haze
+			and memory.read_u8(0x33B23F, "RDRAM") >= 252
+			-- we just reset the air timer - this should ignore health drops on losing air
+			-- (0->FF on losing health, x4 speed in haze, x3 in ice water).
+		end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x33B23D end,
+		LivesWhichRAM=function() return "RDRAM" end,
+		maxlives=function() return 69 end,
+		ActiveP1=function() return memory.read_u8(0x33B193, "RDRAM") > 0 end,
 	},
 	['FZERO_SNES']={ -- F-ZERO, SNES
 		func=singleplayer_withlives_swap,

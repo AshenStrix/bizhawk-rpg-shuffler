@@ -5748,13 +5748,16 @@ local gamedata = {
 	},
 	['MsPacMan_NES']={ -- Ms. Pac-Man, NES
 		func=singleplayer_withlives_swap,
-		p1gethp=function() return 1 end ,
-		p1getlc=function() return memory.read_u8(0x00d4, "RAM") end,
-		maxhp=function() return 1 end,
+		p1gethp=function() return memory.read_s8(0x00d4, "RAM") end, -- lives remaining (minus one)
+		p1getlc=function() return memory.read_s8(0x0122, "RAM") end, -- continues
+		maxhp=function() return 5 end,
+		minhp=-1, -- lives drop to -1 when you have 0 lives left
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
-		p1livesaddr=function() return 0x00d4 end,
-		maxlives=function() return 5 end,
+		p1livesaddr=function() return 0x0122 end, -- continues
+		-- if you run out of lives on levels 1-7, you can just select again from the menu (no continue needed)
+		-- so, only refill continues, not lives
+		maxlives=function() return 2 end,
 		ActiveP1=function() return true end, -- p1 is always active!	
 	},
 	['HammerinHarry_NES']={ -- Hammerin' Harry, NES

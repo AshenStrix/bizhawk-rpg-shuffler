@@ -5249,7 +5249,7 @@ local gamedata = {
 		swap_exceptions=function() return memory.read_u8(0xF4, "WRAM") == 0 end,
 		p1livesaddr=function() return 0x1C end,
 		LivesWhichRAM=function() return "WRAM" end,
-		maxlives=function() return 0x68 end, -- Counts as 69, at least in western versions
+		maxlives=function() return 0x03 end, -- 4 on screen will tell you it's working without counting down 69+ lives on level clear
 		ActiveP1=function() return true end, -- p1 is always active!
 		grace=60, -- Professional/Action Mode (Nintendo Super System only???? Must verify) can combo you too rapidly to recover
 	},

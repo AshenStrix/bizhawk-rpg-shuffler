@@ -2407,19 +2407,33 @@ local gamedata = {
 		LivesWhichRAM=function() return "RAM" end,
 	},
 	['BT_SNES']={ -- Battletoads in Battlemaniacs for SNES
-		func=battletoads_snes_swap,
+		func=twoplayers_withlives_swap,
 		p1gethp=function() return memory.read_s8(0x000E5E, "WRAM") end,
 		p2gethp=function() return memory.read_s8(0x000E60, "WRAM") end,
 		p1getlc=function() return memory.read_s8(0x000028, "WRAM") end,
 		p2getlc=function() return memory.read_s8(0x00002A, "WRAM") end,
-		p1getsprite=function() return memory.read_u8(0x000AEE, "WRAM") end, -- this is an address for the sprite called for p1
-		p2getsprite=function() return memory.read_u8(0x000AF0, "WRAM") end, -- this is an address for the sprite called for p2
-		gettogglecheck=function() 
-		local level_changed = update_prev("level", memory.read_u8(0x00002C, "WRAM"))
-			return level_changed
-			-- on level change, HP drops to 0, then springs back up to max, this would otherwise cause a false swap
-		end,
 		maxhp=function() return 16 end,
+		swap_exceptions=function()
+			-- do not swap on changing level
+			-- on level change, HP drops to 0, then springs back up to max, this would otherwise cause a false swap
+			local level_changed = update_prev("level", memory.read_u8(0x00002C, "WRAM"))
+			if level_changed then return true end
+			-- if there are no sprites loaded, don't swap
+			if memory.read_s8(0x000E5E, "WRAM") == 0 and memory.read_s8(0x000E60, "WRAM") == 0
+			then
+				return true
+			end
+			return false
+		end,
+		other_swaps=function()
+			-- do swap if the "hurt on the bowling pins/dominos" sprite gets called
+			local p1hurtsprite_changed, p1_hurtsprite_curr = update_prev("p1hurtsprite", memory.read_u8(0x000AEE, "WRAM") == 128)
+			local p2hurtsprite_changed, p2_hurtsprite_curr = update_prev("p2hurtsprite", memory.read_u8(0x000AF0, "WRAM") == 236)
+			local level = memory.read_u8(0x00002C, "WRAM")
+			if p1hurtsprite_changed == true and p1_hurtsprite_curr == true and (level == 2 or level == 8) then return true end
+			if p2hurtsprite_changed == true and p2_hurtsprite_curr == true and (level == 2 or level == 8) then return true end
+			return false
+		end,
 		-- note, BT_SNES currently uses a custom Infinite Lives function to allow for level skips to work
 	},
 	['BTDD_SNES']={ -- Battletoads Double Dragon SNES

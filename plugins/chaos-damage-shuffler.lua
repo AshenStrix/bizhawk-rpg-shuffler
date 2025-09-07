@@ -86,6 +86,7 @@ plugin.description =
 	-Majora's Mask (N64), 1p
 	-Oracle of Seasons (GBC), 1p
 	-Oracle of Ages (GBC), 1p
+	-Minish Cap (GBA), 1p
 
 	THE LINK/SAMUS BLOCK
 	-Super Metroid x LTTP Crossover Randomizer, aka SMZ3 (SNES), 1p
@@ -1481,6 +1482,10 @@ end
 
 local function health_swap(gamemeta)
 	return function(data)
+		-- return without updating health values, 'batching' damage taken until this becomes false
+		if gamemeta.suspend_updates and gamemeta.suspend_updates() then
+			return false
+		end
 		-- for games where iframes are unhelpful
 		local health_changed, health_curr, health_prev = update_prev('health', gamemeta.get_health())
 		-- If a swap is already scheduled, decrease it but do no further processing.
@@ -3917,6 +3922,41 @@ local gamedata = {
 			end
 			return false
 		end,
+	},
+	['Zelda_Minish'] = { -- Minish Cap, GBA
+		func = health_swap, -- can use iframes if needed but this should work better
+		-- health is zero on title screen, 'real' health is set per-savefile-selection too
+		-- sword technique demonstrations can alter health (one-offs though) (main health only?)
+		is_valid_gamestate = function() -- ingame, and health values match
+			return memory.read_u8(0x1002, "IWRAM") == 2
+				and memory.read_u8(0x11A5, "IWRAM") == memory.read_u8(0x2AEA, "EWRAM")
+		end,
+		get_health = function() return memory.read_u8(0x2AEA, "EWRAM") end,
+		-- possibly if money is drained by an enemy if it doesn't also do damage?
+		-- wallmaster-type grabs? (logic clashes and false positives may be an issue)
+		-- the timed gameover at the very end (invisible timer, extra delay for clarity here)
+		other_swaps = function() return memory.read_u16_le(0x2ECC, "EWRAM") == 1, 241 end,
+		-- being grabbed by an enemy needs to allow mashing out before swapping
+		suspend_updates = function() return memory.read_u8(0x3F9A, "IWRAM") & 128 ~= 0 end,
+		grace = 30, -- give the default iframe period to react after swapping in
+		-- OTHER NOTES:
+		-- gamestate is 0x1002 IWRAM: 0 title, 1 savefiles, 2 game, 3 gameover, 4 credits
+		-- display health is half other health values (4/heart vs 8/heart)
+		-- health flows 0x2AEA -> 0xAF03 EWRAM (plus an 0x11A5 IWRAM copy)
+		-- copy health should be updated on actual damage, will get re-set on area change
+		-- max health is +1 offset from current health (0x2AEB/0xAF04/0x11A6)
+		-- money is 0x2B00 -> 0xAF0E EWRAM, 2 bytes LE (0-999)
+		-- iframes is 0x119D IWRAM if needed, 0x11A2 perhaps also related?
+		-- 30 iframes on hit by default, 255 (or 254) while invulnerable (during text, etc)
+		-- some hits do less, down to 12
+		-- iframes from falling in water w/ no damage
+		-- 0x3F9A IWRAM & 128 for being grabbed (allow breaking out without swaps)
+		-- for enemy that grabs w/ damage: 12 iframes, max 4 hits, 40-56 frames between hits
+		-- 0x3FB1 IWRAM & 1 is wallmaster? (minish eviction from boss too uhhh)
+		-- for timed sequence, 0x2ECC EWRAM is set to 10800 frames (180s), gameover on hitting 0
+		
+		--get_iframes = function() return memory.read_u8(0x119D, "IWRAM") end,
+		--iframe_minimum = function() return 15 end,
 	},
 	['MPAINT_DPAD_SNES']={ -- Gnat Attack in Mario Paint for SNES
 		-- (I tested this with a version that can use the dpad for movement and face buttons for clicks)

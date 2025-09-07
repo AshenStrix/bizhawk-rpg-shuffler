@@ -423,7 +423,7 @@ local function FamilyFeud_SNES_swap(gamemeta)
 		local player_changed, player, prev_player = update_prev('player', gamemeta.getwhichplayer())
 		return
 			(strike_changed and strike == 1) and  -- we just got a strike or 0
-			(player < 2) -- It's player 1 or 2, not the CPU
+			(player < 2), 30 -- It's player 1 or 2, not the CPU; give 30 frames of buzzer before and after (roughly) swaps
 		end
 	end
 

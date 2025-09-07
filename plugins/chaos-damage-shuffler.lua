@@ -5438,11 +5438,15 @@ local gamedata = {
 			-- end of level, ticks down time, then health
 			-- if timer is all zeros, and you didn't lose a life from time up, don't swap
 			local lives_changed = update_prev ("lives", memory.read_s8(0x6c0, "RAM"))
-			return 
-			(memory.read_u8(0x691, "RAM") == 0 and 
-			memory.read_u8(0x692, "RAM") == 0 and
-			memory.read_u8(0x693, "RAM") == 0 and not
-			lives_changed)
+			if 
+				(memory.read_u8(0x691, "RAM") == 0 and memory.read_u8(0x692, "RAM") == 0 and
+				memory.read_u8(0x693, "RAM") == 0 and not lives_changed)
+				or
+				(memory.read_u8(0x355, "RAM") == 0x80) -- we are on the pause menu; you can trade hp and chips for each other during boss fights
+			then
+				return true
+			end
+			return false
 		end,
 	},
 	['GhostsnGoblins_NES']={ -- Ghosts n' Goblins, NES

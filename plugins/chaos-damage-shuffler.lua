@@ -6966,7 +6966,8 @@ local gamedata = {
 	['MagicalQuestMickey1_SNES']={ -- The Magical Quest Starring Mickey Mouse (SNES)
 		func=health_swap,
 		get_health=function() return mainmemory.read_u8(0x2B1) end,
-		is_valid_gamestate=function() return mainmemory.read_u8(0x2B0) >= 1 and mainmemory.read_u8(0x2B0) <= 10 end,
+		is_valid_gamestate=function() return mainmemory.read_u8(0x2BF) == 1 and -- check that we are not in the demo (0)
+			mainmemory.read_u8(0x360) > 0 and mainmemory.read_u8(0x360) <= 0x40 end, -- check if the counter that ticks down seconds of in-game timer is running
 		other_swaps=function() return false end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "WRAM" end,

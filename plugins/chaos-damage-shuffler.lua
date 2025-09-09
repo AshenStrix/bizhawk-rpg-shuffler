@@ -51,6 +51,7 @@ plugin.description =
 	-Super Mario Land (GB or GBC DX patch), 1p
 	-Super Mario Land 2: 6 Golden Coins (GB or GBC DX patch), 1p
 	-Super Mario 64 (N64), 1p - including Better Non-Stop hack
+	-New Super Mario Bros. (DS), 1p
 
 	CASTLEVANIA BLOCK
 	-Castlevania (NES), 1p
@@ -1972,6 +1973,42 @@ local function castlevania_n64_swap(gamemeta)
 	end
 end
 
+local function mario_swap(gamemeta)
+	return function(data)	
+		
+		-- swap function for mario-type games where you have a status value instead of health
+		-- as not all status value decreases count as damage and zero may be a valid status,
+		-- we consult damage_table to know what status changes we should swap for
+		-- if getting hit in state x puts you in state y, damage_table[x] = y
+		
+		local lives_changed, lives, prev_lives = update_prev('lives', gamemeta.get_lives())
+		local status_changed, status, prev_status = update_prev('status', gamemeta.get_status())
+		
+		-- check if we're in a valid gamestate
+		if not gamemeta.is_valid_gamestate() then
+			return false
+		end
+		
+		-- did our status change actually count as damage
+		if status_changed and gamemeta.damage_table[prev_status] == status then
+			return true, gamemeta.delay
+		end
+		
+		-- otherwise we swap on lives going down
+		if lives_changed and lives < prev_lives then
+			return true, gamemeta.delay
+		end
+		
+		-- allow any custom overrides
+		if gamemeta.other_swaps then
+			local swap, delay = gamemeta.other_swaps()
+			return swap, delay or gamemeta.delay
+		end
+		
+		return false
+	end
+end
+
 local function sonic_swap(gamemeta)
 	return function(data)
 --[[	Logic:
@@ -3268,6 +3305,42 @@ local gamedata = {
 		LivesWhichRAM=function() return "RDRAM" end,
 		maxlives=function() return 69 end,
 		ActiveP1=function() return memory.read_u8(0x33B193, "RDRAM") > 0 end,
+	},
+	['NSMB_DS'] = { -- New Super Mario Bros (DS)
+		func = mario_swap,
+		get_lives = function() return memory.read_u8(0x08B364, "Main RAM") end,
+		-- use this status value as it changes after death instead of before
+		-- thus the gamestate check will filter the status change, but not the life change
+		get_status = function() return memory.read_u8(0x1B7187, "Main RAM") end,
+		-- shell -> big, fire -> big, big -> small
+		damage_table = {[5] = 1, [2] = 1, [1] = 0},
+		-- we're actually in a level
+		is_valid_gamestate = function() return memory.read_u32_le(0x03BD34, "Main RAM") == 3 end,
+		-- Infinite* Lives section
+		CanHaveInfiniteLives = true,
+		p1livesaddr = function() return 0x08B364 end,
+		LivesWhichRAM = function() return "Main RAM" end,
+		maxlives = function() return 69 end,
+		ActiveP1 = function()
+			local gamestate = memory.read_u32_le(0x03BD34, "Main RAM")
+			-- lives can be set on the map screen as well
+			return gamestate == 3 or gamestate == 9
+		end,
+		-- OTHER NOTES:
+		-- 0x03BD34 fairly consistent game situation: 3 level, 9 map, 4 main menu, + others
+		-- in-level status is stored at 0x1B7187 and also 0x1B7188
+		-- different status location for on the world map, values get copied around
+		-- status values are: 0 small, 1 big, 2 fire, 3 mega, 4 mini, 5 shell
+		-- the only real damage you take in mini and mega form is a death so lives handle them
+		-- 0x08B32C powerup stored: 0 none, 1 mush, 2 flower, 3 shell, 4 mini, 5 mega
+		-- 5 lives on title, then lives loaded from save file on selection
+		-- the two status values change at different times:
+		-- on damage, 0x1B7187 records the change a frame before 0x1B7188
+		-- on death, 0x1B7188 is set to zero first
+		--   then 0x08B364 decreases and 0x1B718F goes 0 -> 1
+		--   then 0x1B7187 is set to zero and 0x1B718F goes 1 -> 0
+		-- on return to map, 0x1B7187 and 0x1B7188 both get zeroed out same frame. joy.
+		-- requiring the 0x03BD34 value of 3 filters this nonsense thankfully
 	},
 	['FZERO_SNES']={ -- F-ZERO, SNES
 		func=singleplayer_withlives_swap,

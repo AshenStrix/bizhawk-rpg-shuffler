@@ -6001,6 +6001,8 @@ local gamedata = {
 	},
 	['Sparkster_SNES']={ -- Sparkster, SNES
 		func=singleplayer_withlives_swap,
+		-- gmode: 0x0158 > 0 marks being in cutscenes (1 == not in control, 2 == stage clear tally and level transition, where HP drops to 0, then refills)
+		gmode=function() return memory.read_s8(0x0158, "WRAM") == 0 end, 
 		p1gethp=function() return memory.read_s8(0x0691, "WRAM") end,
 		p1getlc=function() return memory.read_s8(0x0168, "WRAM") end,
 		maxhp=function() return 14 end,
@@ -6009,6 +6011,7 @@ local gamedata = {
 		p1livesaddr=function() return 0x0168 end,
 		maxlives=function() return 69 end,
 		ActiveP1=function() return true end, -- p1 is always active!
+		delay=10, -- helps with health-draining situations, like the wringers in stage 2
 	},
 	['StarTropics_NES']={ -- StarTropics, NES
 		func=singleplayer_withlives_swap,

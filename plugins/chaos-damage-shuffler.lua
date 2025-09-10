@@ -5299,7 +5299,9 @@ local gamedata = {
 			if memory.read_u8(0x18, "WRAM") == 8 then -- Game Over
 				return 0
 			end
-
+			if memory.read_u8(0x18, "WRAM") == 0 and memory.read_u8(0x286, "WRAM") == 0 then
+				return -1
+			end
 			-- Need to convert binary-coded decimal hexadecimal value to just plain decimal
 			local livesHex = memory.read_u8(0x1C, "WRAM")
 			-- Get upper nybble, bit-shift right 4 bits
@@ -5308,8 +5310,8 @@ local gamedata = {
 			local ones = livesHex & 0x0F
 			-- Merge 'em
 			local lives = (tens * 10) + ones
-			-- ActRaiser actually offsets lives by 1 for some reason - apparently the Japanese version doesn't but whatever
-			return lives+1
+			-- ActRaiser actually offsets lives by 1 for some reason - apparently the Japanese version doesn't but whatever - and 0x99 means 0
+			return (lives+1)%100
 		end,
 		p1gethp=function()
 			if (memory.read_u8(0x18, "WRAM") > 0
@@ -5336,7 +5338,10 @@ local gamedata = {
 		p1livesaddr=function() return 0x1C end,
 		LivesWhichRAM=function() return "WRAM" end,
 		maxlives=function() return 0x03 end, -- 4 on screen will tell you it's working without counting down 69+ lives on level clear
-		ActiveP1=function() return true end, -- p1 is always active!
+		ActiveP1=function()
+			local gameMode = memory.read_u8(0x18, "WRAM")
+			return gameMode >= 1 and gameMode <= 8 -- p1 is always active, but don't set lives when in sim mode
+		end,
 		grace=60, -- Professional/Action Mode (Nintendo Super System only???? Must verify) can combo you too rapidly to recover
 	},
 	['PaRappa1_PS1']={ -- PaRappa the Rapper, PSX

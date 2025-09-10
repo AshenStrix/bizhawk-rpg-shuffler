@@ -9,6 +9,7 @@ plugin.settings =
 	{ name='ClingerSpeed', type='boolean', label='BT NES: Auto-Clinger-Winger (unpatched ONLY)' },
 	{ name='BTSNESRash', type='boolean', label='BT SNES: I want Rash, pick 2P, give Pimple 1 HP'},
 	{ name='SuppressLog', type='boolean', label='Suppress "ROM unrecognized"/"on Level 1" logs'},
+	{ name='DebugSingleGame', type='boolean', label='Rearm the shuffler logic even if no new game was loaded' },
 	{ name='SMW2YI_MiniBonusSwaps', type='boolean', label="Yoshi's Island: Shuffle on Mini Battle damage/loss", default=true},
 	{ name='IceClimberBonusSwaps', type='boolean', label="Ice Climber (NES): Shuffle on failing the bonus game"},
 	{ name='grace', type='number', label="Minimum grace period before swapping (won't go < 10 frames)", default=10 },
@@ -333,6 +334,7 @@ local tags = {}
 local tag
 local gamemeta
 local prevdata
+local debug_timer
 local swap_scheduled
 local shouldSwap
 local gamesleft
@@ -7244,6 +7246,7 @@ end
 
 function plugin.on_game_load(data, settings)
 	prevdata = {}
+	debug_timer = 0
 	swap_scheduled = false
 	shouldSwap = function() return false end
 
@@ -7482,6 +7485,19 @@ if type(tonumber(which_level)) == "number" then
 	end
 	-- TODO: CAN WE MAKE THIS A FUNCTION AND CALL IT WHEN WE NEED IT
 	
+	-- avoiding super short swaps (<10) as a precaution
+	local grace = math.max(gamemeta and gamemeta.grace or 0, settings.grace, 10)
+	
+	if settings.DebugSingleGame and swap_scheduled then
+		debug_timer = debug_timer + 1
+		-- rearm the shuffler even though no on_load happened to reset things
+		if debug_timer > grace then
+			prevdata = {}
+			debug_timer = 0
+			swap_scheduled = false
+		end
+	end
+	
 	-- run the check method for each individual game
 	
 	if not swap_scheduled then
@@ -7511,9 +7527,14 @@ if type(tonumber(which_level)) == "number" then
 		
 		-- AND NOW WE SWAP
 		local schedule_swap, delay = shouldSwap(prevdata)
-		if schedule_swap and frames_since_restart > math.max((gamemeta.grace or 0), settings.grace, 10) then -- avoiding super short swaps (<10) as a precaution
-			swap_game_delay(delay or 3)
+		if schedule_swap and frames_since_restart > grace then
+			delay = delay or 3
+			debug_timer = -delay
+			swap_game_delay(delay)
 			swap_scheduled = true
+			if not settings.SuppressLog then
+				log_console('Chaos Shuffler: swap scheduled for %s (frame: %d, delay: %d)', tag, frames_since_restart, delay)
+			end
 		end
 	end
 	

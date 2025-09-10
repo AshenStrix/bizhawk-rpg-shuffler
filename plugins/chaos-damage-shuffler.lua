@@ -6401,18 +6401,19 @@ local gamedata = {
 			hp_prev ~= 0)
 			-- why does the game LOAD IFRAMES TO 120 A SECOND OR SO AFTER STARTING THE GAME??
 			-- well, it also loads in FROM an impossible health value, 0
-			-- health can't dip below 0x68 or go above 0x6D, this game stores HP in insane ways
+			-- this game stores HP and lives in insane ways, hp is 0x69 ~ value and lives are value ~ 0x69
+			-- at any rate, health can't dip below 0x68 or go above 0x6D
 			-- so we'll just not shuffle if the previous or current health value is impossible.
 			-- this will catch when it has those garbage values loaded in the title/loading screens, cool!
 		end,
-		swap_exceptions=function() return memory.read_u8(0x0CCA, "WRAM") == 0x69 end, -- prevent double swaps on no health (why is no health 0x69??)
+		swap_exceptions=function() return memory.read_u8(0x0CCA, "WRAM") == 0x69 end, -- prevent double swaps on no health
 		other_swaps=function() return false end,
 		get_iframes=function() return memory.read_u8(0x0C84, "WRAM") end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "WRAM" end,
 		MustDoInfiniteLivesOnFrame=function() return true end,
 		p1livesaddr=function() return 0x0C71 end,
-		maxlives=function() return 0 end, -- why does 0 result in 69 lives? That's a good question, Mega Man.
+		maxlives=function() return 9 ~ 0x69 end, -- setting the lives target to 9, transformed to how the game stores it; this will be relevant if infinite lives are reworked in the future
 		ActiveP1=function() return true end, -- p1 is always active!
 	},
 	['AdvOfGummiBear_GEN']={ -- Adventures of the Gummi Bears (bootleg), NES

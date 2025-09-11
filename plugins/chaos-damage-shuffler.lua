@@ -7213,6 +7213,31 @@ local gamedata = {
 		ActiveP1=function() return true end, -- p1 is always active!
 		grace=90, -- TODO: Find good value for health that drains with no I-frames
 	},
+	['SanrioWorldSmashBall_SNES']={ -- Sanrio World Smash Ball!, SNES
+		-- infinite lives does not apply, you can always continue
+		-- track the opponent's wins by treating them as reverse lives
+		func=twoplayers_withlives_swap,
+		p1gethp=function() return 0 end,
+		p2gethp=function() return 0 end,
+			-- p1 is always active and, outside of 2p mode, on the bottom
+			-- so as long as the bottom player isn't inactive (0xFF), track their wins (inverted)
+		p1getlc=function()
+			if memory.read_u8(0x0061, "WRAM") ~= 0xFF then
+				return memory.read_u8(0x005E, "WRAM") * -1
+			else
+				return 0
+			end
+		end,
+			-- p2 is active if this address == 0 or == 2, if 0xFF then CPU controlled, so only track p1's wins if p2 is human
+		p2getlc=function()
+			if memory.read_u8(0x0063, "WRAM") ~= 0xFF then
+				return memory.read_u8(0x005D, "WRAM") * -1
+			else
+				return 0
+			end
+		end,
+		maxhp=function() return 0 end,
+	},
 
 }
 

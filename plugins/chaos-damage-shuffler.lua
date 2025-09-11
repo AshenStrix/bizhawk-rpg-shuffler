@@ -7246,7 +7246,10 @@ local gamedata = {
 		p1getlc=function() return mainmemory.read_u8(0xEA12) * -1 end, -- wins by p2, inverted
 		-- notes for future 2p support: p2 will be active if we are in duel mode ONLY
 		-- 0x9480 in duel mode: == 1 for 1p, == 2 for 2p
-		maxhp=function() return 100 end,
+		maxhp=function() return mainmemory.read_u8(0x8FBB) end,
+		swap_exceptions=function() 
+		local maxhpval_changed = update_prev("maxhpval", mainmemory.read_u8(0x8FBB))
+		return mainmemory.read_u8(0xEADB) == 0x01 or maxhpval_changed == true end, -- if 0x80, we are in demo, not in actual gameplay
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "68K RAM" end,
 		p1livesaddr=function() return 0xEA07 end, -- continues

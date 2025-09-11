@@ -218,7 +218,9 @@ plugin.description =
 	-Rocket Knight Adventures (Genesis/Mega Drive), 1p
 	-Rollergames (NES), 1p
 	-Rubble Saver II (GB), 1p
+	-Sanrio World Smash Ball! (SNES), 1-2p
 	-Saturday Night Slam Masters (SNES), 1p - NEEDS WORK (to recognize pins as damage)
+	-Shaq-Fu (Genesis/Mega Drive), 1p
 	-Shatterhand (NES), 1p
 	-Shinobi III (Genesis/Mega Drive), 1p
 	-Simpsons: Bart vs. the World (NES), 1p
@@ -7237,6 +7239,20 @@ local gamedata = {
 			end
 		end,
 		maxhp=function() return 0 end,
+	},
+	['ShaqFu_GEN']={ -- Shaq-Fu, Genesis
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return mainmemory.read_u8(0x80C9) end,
+		p1getlc=function() return mainmemory.read_u8(0xEA12) * -1 end, -- wins by p2, inverted
+		-- notes for future 2p support: p2 will be active if we are in duel mode ONLY
+		-- 0x9480 in duel mode: == 1 for 1p, == 2 for 2p
+		maxhp=function() return 100 end,
+		CanHaveInfiniteLives=true,
+		LivesWhichRAM=function() return "68K RAM" end,
+		p1livesaddr=function() return 0xEA07 end, -- continues
+		maxlives=function() return 9 end, -- continues
+		ActiveP1=function() return true end, -- p1 is always active!
+		grace=40,
 	},
 
 }

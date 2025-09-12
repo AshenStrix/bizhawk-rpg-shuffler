@@ -219,7 +219,7 @@ plugin.description =
 	-Rollergames (NES), 1p
 	-Rubble Saver II (GB), 1p
 	-Sanrio World Smash Ball! (SNES), 1-2p
-	-Saturday Night Slam Masters (SNES), 1p - NEEDS WORK (to recognize pins as damage)
+	-Saturday Night Slam Masters (SNES), 1p
 	-Shaq-Fu (Genesis/Mega Drive), 1p
 	-Shatterhand (NES), 1p
 	-Shinobi III (Genesis/Mega Drive), 1p
@@ -6905,16 +6905,35 @@ local gamedata = {
 		ActiveP1=function() return memory.read_u8(0x00BD, "WRAM") & 1 ~= 0 end,
 		ActiveP2=function() return memory.read_u8(0x00BD, "WRAM") & 2 ~= 0 end,
 	},
-	['SatNightSlamMasters_SNES']={ -- Saturday Night Slam Masters, SNES
-		func=singleplayer_withlives_swap,
-		p1gethp=function() return memory.read_u8(0x011D, "WRAM") end,
-		p1getlc=function() return memory.read_u8(0x0157, "WRAM") end,
-		maxhp=function() return 255 end,
-		CanHaveInfiniteLives=true,
-		LivesWhichRAM=function() return "WRAM" end,
-		p1livesaddr=function() return 0x0157 end,
-		maxlives=function() return 5 end,
-		ActiveP1=function() return true end, -- p1 is always active!
+	['SatNightSlamMasters_SNES']={ -- Saturday Night Slam Masters, SNES - 1p (for now)
+		func=iframe_health_swap,
+		get_health=function() return mainmemory.read_u8(0x879) end,
+		get_iframes=function() return mainmemory.read_u8(0x8BB) end,
+		is_valid_gamestate=function() return true end,
+			-- if health_swap is needed instead: 0xA89 : p1 grappled timer
+			-- if p1 is grappled, don't swap until the grapple is broken or the player loses
+			-- suspend_updates=function() return mainmemory.read_u8(0xA89) > 0 end,
+		other_swaps=function()
+			local singles_winner_changed, singles_winner_curr = update_prev("singles_winner", mainmemory.read_u8(0x1C8D))
+			-- 0 if double countout, 1 if 1p, 2 if 2p
+			local lost_royale_changed, lost_royale_curr, lost_royale_prev = update_prev("lost_royale", mainmemory.read_u8(0x1B78))
+			-- 0x80 if active in battle royale, 0x01 if p1 is eliminated
+			local countout_over_changed, countout_over_curr = update_prev("countdown_over", mainmemory.read_u8(0x1A62))
+			-- 0 for false, 1 for true
+			-- if 2p is declared the winner, OR a double countout happens, swap
+			if (singles_winner_changed and singles_winner_curr == 2) or 
+				(lost_royale_curr == 0x01 and lost_royale_prev == 0x80) or
+				(countout_over_changed == true and countout_over_curr == 1 and singles_winner_curr == 0)
+			then
+				return true
+			end
+			-- add shuffling on iframes specifically with 0 health
+			if mainmemory.read_u8(0x879) == 0 then
+				local zerohp_iframes_changed, zerohp_iframes_curr, zerohp_iframes_prev = update_prev("zerohp_iframes", mainmemory.read_u8(0x8BB) > 0)
+				if zerohp_iframes_changed == true and zerohp_iframes_curr == true then return true end
+			end
+			return false
+		end,
 	},
 	['WildGuns_SNES']={ -- Wild Guns, SNES
 		func=singleplayer_withlives_swap,

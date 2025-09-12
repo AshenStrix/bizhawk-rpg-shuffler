@@ -137,6 +137,7 @@ plugin.description =
 	-Bao Qing Tian (Ch) (NES), 1p
 	-Batman (NES), 1p
 	-Blades of Steel (NES - NA/Europe), 1-2p
+	-Bonk's Adventure (TG-16), 1p
 	-Bubble Bobble (NES), 1p
 	-Bubsy in Claws Encounters of the Furred Kind (aka Bubsy 1) (SNES), 1p
 	-Bubsy in Fractured Furry Tales (Jaguar), 1p
@@ -160,10 +161,12 @@ plugin.description =
 	-F-Zero (SNES), 1p
 	-Family Feud (SNES), 1-2p
 	-Garfield: A Week of Garfield (NES), 1p
+	-Gargoyle's Quest II (NES), 1p
 	-Ghosts'n Goblins (NES), 1p
 	-Ghouls'n Ghosts (Genesis/Mega Drive), 1p
 	-Gimmick! (NES/Famicom), 1p
 	-Goof Troop (SNES), 1-2p
+	-Gremlins 2: The New Batch (NES), 1p
 	-Gunstar Heroes (Genesis/Mega Drive), 1p
 	-Hammerin' Harry (NES), 1p
 	-Hercules II (Bootleg) (Genesis/Mega Drive), 1p
@@ -192,6 +195,7 @@ plugin.description =
 	-Mega Q*Bert (Genesis/Mega Drive), 1p
 	-Mendel Palace (NES), 1p
 	-Metal Storm (NES), 1p
+	-Mighty Morphin Power Rangers - The Movie (SNES), 1p
 	-Minnesota Fats - Pool Legend (Saturn), 1p story mode
 	-Ms. Pac-Man (Tengen) (NES), 1p
 	-Monopoly (NES), 1-8p (on one controller), shuffles on any human player going bankrupt, going or failing to roll out of jail, and losing money (not when buying, trading, or setting up game)
@@ -201,6 +205,7 @@ plugin.description =
 	-Ninja Gaiden (NES), 1p
 	-Ninja Gaiden II - The Dark Sword of Chaos (NES), 1p
 	-Ninja Gaiden III - The Ancient Ship of Doom (NES), 1p
+	-Ninjawarriors (SNES), 1p
 	-PaRappa the Rapper (PSX), 1p - shuffles on dropping a rank
 	-Pebble Beach Golf Links (Sega Saturn), 1p - Tournament Mode, shuffles after stroke
 	-Pictionary (NES)
@@ -7275,6 +7280,71 @@ local gamedata = {
 		maxlives=function() return 9 end, -- continues
 		ActiveP1=function() return true end, -- p1 is always active!
 		grace=40,
+	},
+	['NinjaWarriorsAgain_SNES']={ -- Ninjawarriors, SNES (USA)
+		func=health_swap,
+		is_valid_gamestate=function() return true end,
+		get_health=function() return memory.read_u8(0x0018B2, "WRAM") end,
+		other_swaps=function() return false end,
+	},
+	['Gremlins2_NES']={ -- Gremlins 2: The New Batch, NES (US)
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_u8(0x00AD, "RAM") end,
+		p1getlc=function() return memory.read_u8(0x057C, "RAM") end,
+		maxhp=function() return 6 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x057C end,
+		LivesWhichRAM=function() return "RAM" end,
+		maxlives=function() return 9 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+		other_swaps=function()
+			-- Shuffle when a balloon is used to save from a pit even though there's no actual damage
+			local balloon_changed, balloon_curr, balloon_prev = update_prev('balloon', memory.read_u8(0x050C, "RAM"))
+			return balloon_changed and balloon_curr < balloon_prev end,
+    },
+	['GargoylesQuest2_NES']={ -- Gargoyle's Quest II, NES, (US)
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_u8(0x0038, "RAM") end,
+		p1getlc=function() return memory.read_u8(0x0039, "RAM") end,
+		maxhp=function() return 9 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x0039 end,
+		LivesWhichRAM=function() return "RAM" end,
+		maxlives=function() return 9 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+	},
+	['PowerRangersMovie_SNES']={ -- Mighty Morphin Power Rangers - The Movie, SNES (USA)
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_u8(0x000628, "WRAM") end,
+		p1getlc=function() return memory.read_u8(0x000602, "WRAM") end, -- continues provided instead of lives since the game's a little easy and you're revived on the spot with lives
+		maxhp=function() return 5 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x000602 end,
+		LivesWhichRAM=function() return "WRAM" end,
+		maxlives=function() return 9 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+		other_swaps=function() 
+			-- shuffler also has to detect lost lives
+			local MMPRlives_changed, MMPRlives_curr, MMPRlives_prev = update_prev('MMPRlives', memory.read_u8(0x00060A, "WRAM"))
+			return MMPRlives_changed and MMPRlives_curr < MMPRlives_prev
+			end,
+	},
+	['BonksAdventure_TG16']={ -- Bonk's Adventure, TG-16 (U)
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_u8(0x0DB4, "Main Memory") end,
+		p1getlc=function() return memory.read_u8(0x0DB1, "Main Memory") end,
+		maxhp=function() return 25 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x0DB1 end,
+		LivesWhichRAM=function() return "Main Memory" end,
+		maxlives=function() return 70 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+		other_swaps=function()
+			-- Swap if you lose your meat power up through damage, but not from the timer.
+			local meatlevel_changed, _, _ = update_prev('meatlevel', memory.read_u8(0x0DBA, "Main Memory"))
+			local _, _, meatseconds_prev = update_prev('meatseconds', memory.read_u8(0x0DC1, "Main Memory"))
+			local _, _, meatmillis_prev = update_prev('meatmillis', memory.read_u8(0x0DC1, "Main Memory"))
+			return meatlevel_changed and meatseconds_prev ~= 0 and meatmillis_prev ~= 1 end,
 	},
 
 }

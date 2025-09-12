@@ -184,6 +184,7 @@ C6C15AEA60BDA10AE11C6BC375296153         Sonic1_GEN                   -- Sonic T
 9FEEB724052C39982D432A7851C98D3E         Sonic2_GEN                   -- Sonic The Hedgehog 2 (World) (Rev. 01)
 DA75878C193293C2E0801A61EA4CE8C0         Sonic2_GEN                   -- Sonic The Hedgehog 2 (World) (Rev. 02) (Only used in Sonic Classics)
 3E5E4B18D035775B916A06F2B3DC5031         Sonic2_GEN                   -- Knuckles the Echidna in Sonic The Hedgehog 2 (World)
+C82B0B73AF1FC91CC8EE9D997C9B2B29D6105B2D Sonic2_GEN                   -- Bubsy in Sonic 2 (4-25-15), GEN
 D724EA4DD417FE330C9DCFD955C596B2         Sonic3K_GEN                  -- Sonic the Hedgehog 3 (NTSC-U)
 4EA493EA4E9F6C9EBFCCBDB15110367E         Sonic3K_GEN                  -- Sonic & Knuckles (World)
 C5B1C655C19F462ADE0AC4E17A844D10         Sonic3K_GEN                  -- Sonic the Hedgehog 3 & Knuckles (World)
@@ -328,6 +329,7 @@ CC8CB9EEBAAE9C695BE7EE965E3C8D7CF82C6D18 AdvMagicKingdom_NES          -- Adventu
 A6FC42BD5D19E36E5D8A2D8C4F4E9D23         Aladdin_GEN                  -- Aladdin (Genesis) (US)
 BD5FEA18CE7456CC0231A39473927D8EA9C6589B Aladdin_SNES                 -- Aladdin (SNES) (US)
 6B08E8FA5C17AA3B435BF611AAE7DB0ABB0A878E ArkanoidDohItAgain_SNES      -- Arkanoid: Doh It Again (SNES)
+3AA21326050C489EA867DE05DD6CB7E5         BonksAdventure_TG16          -- Bonk's Adventure, TG-16 (U)
 0E40052299ADA46F6C2D1172323366F872F90570 BubbleBobble_NES             -- Bubble Bobble (US)
 752D6E1ED185F9DB49230F42319A573A44E32397 BubsyFFT_JAG                 -- Bubsy in: Fractured Furry Tales, Jaguar (World)
 B01DC83C                                 Bubsy3D_PS1                  -- Bubsy 3D: Furbitten Planet, PS1 (NTSC-U)
@@ -342,6 +344,7 @@ E708011B76EE757EB27D1B0626071A055DEACACB Castlevania2_GB              -- Castlev
 76093EA07A16FDAA8AA58730FD29B4977A264B5E DuckTales2_NES               -- Duck Tales 2 (US)
 241D076E6CAF02496A916AF30C009A5279E0832E DynamiteHeaddy_GEN           -- Dynamite Headdy (J)
 64D4574DE453DB2B4DB0F8FBF6F43E7E         EarnestEvans_SCD             -- Earnest Evans (Mega CD, NTSC-J)
+2380B3439B2F1EA98D63DB99758671FA8FAF601C GargoylesQuest2_NES          -- Gargoyle's Quest II, NES, (US)
 835FEE060B15700163A1F8AD9716A163BF79C8FD Gimmick_NES                  -- Gimmick (J)
 6E93A89176AC5EB163A349E6EB42C02CBB9ED907 Gimmick_NES                  -- Gimmick! (SadColor QoL Patch)
 C61FF4BCDF10813C74F36AB57E29F646         GhoulsnGhosts_GEN            -- Ghouls 'n Ghosts (US)
@@ -352,6 +355,7 @@ B38560D091801DB5E833D17393FE1DF1398909B6 GoofTroop_SNES               -- Goof Tr
 1624D3415D3BF3DE7ACFAEA1BAA9D25B4CAF85FA GoofTroop_SNES               -- Goof Troop (Europe)
 A13048050FCD51B07BA1A0ABE541FC416F3BF8E6 GoofTroop_SNES               -- Goof Troop (Germany)
 B3FB29994BFB9ECED59B580A13AF89C9BA9DBF94 GoofTroop_SNES               -- Goof Troop (France)
+7B3CC145CFDB80AAC8E1A005A3E36C9C16A56EA9 Gremlins2_NES                -- Gremlins 2: The New Batch (US)
 9A369CFC6355DB48677771E345421E0E         GunstarHeroes_GEN            -- Gunstar Heroes (US)
 95610C432927F8E2179B1A49496A083AED34A322 HammerinHarry_NES            -- Hammerin' Harry [Daiku no Gen-san] (J)
 5479601228FD14FEFBD1D1FD5FCEEBED         HighSeasHavoc_GEN            -- High Seas Havoc (US)
@@ -384,6 +388,7 @@ DB009866ECF20CFDCE93DCA861F5BE1F9DFAAF2B MarbleMadness_NES            -- Marble 
 646FC2337BDB2FCA8857ABAF6A41EC44F39BB83B MendelPalace_NES             -- Mendel Palace (US)
 F569F70DBBEE96A348E053A958120F64F05B7D04 MetalStorm_NES               -- Metal Storm (US)
 7FA231C5A64B9AF1B4E718B019975B21512A2E51 MetalStorm_NES               -- Metal Storm (US), 3 hit hack
+82FBE365BC96FE3F03C3EB12E1620910B15F01F9 PowerRangersMovie_SNES       -- Mighty Morphin Power Rangers - The Movie (USA)
 B1C7FB96C162BD24751AEC2596BE2D8A         MinnesotaFatsPoolLegend_SAT  -- Minnesota Fats - Pool Legend (R) [Saturn]
 A1DD8A3E4B8C98DEE49D5E90D6B87903         MortalKombat1_GEN            -- Mortal Kombat (US), Genesis
 -- C6DED5B8BCA1716A2DDDFDC697B31F085AAA05D0 MortalKombat_SNES            -- Mortal Kombat (US)
@@ -391,6 +396,7 @@ A1DD8A3E4B8C98DEE49D5E90D6B87903         MortalKombat1_GEN            -- Mortal 
 -- 58E4E1259A86FAAADBC982176E569CB2038DBAC5 MortalKombat3_SNES           -- Mortal Kombat III (US)
 5C40F45A495B07A84FBE9C8473155AE0EA55E635 MsPacMan_NES                 -- Ms. Pac Man (Tengen) (US)
 673541B8AE408BBA2B73ABBC7AC7E3A8358F7824 MysticWarriors_ARC           -- Mystic Warriors (Arcade, 2p, US)
+18B946459AF12A8D35914A5BFB62AC4CF21F9266 NinjaWarriorsAgain_SNES      -- Ninjawarriors, SNES (USA)
 E125E0F65927C7EE16EB71B4C84E0534DC74E9F7 Pictionary_NES               -- Pictionary (US)
 0FAFD446586C114786B95169BCB5F45E72261ADB Pictionary_NES               -- Pictionary (US)
 DB9D670B6D1915C9F2B26D369B831B1023B33270 PockyRocky_SNES              -- Pocky & Rocky (US)

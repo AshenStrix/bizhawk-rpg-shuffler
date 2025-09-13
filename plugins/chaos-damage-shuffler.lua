@@ -4900,9 +4900,21 @@ local gamedata = {
 			local activeplayer_changed, activeplayer_curr, activeplayer_prev = update_prev("activeplayer", memory.read_u8(0x0004C6, "WRAM"))
 			-- 0 == p1, 1 == p2, this changes when active player's life count toggles between p1 and p2 on the 2p contest map
 			-- it also changes in 2p team mode when DK/Diddy tags the other in, but lives won't change then! 
-			return lives_changed and lives_curr < lives_prev and not activeplayer_changed
+			if lives_changed and lives_curr < lives_prev and not activeplayer_changed
 				and not (memory.read_u8(0x0006D8, "WRAM") == 1)
 				-- not on map
+			then
+				return true
+			end
+			-- in the snowball fight level, iframes won't trigger a swap, they're stored somewhere else/differently
+			-- you immediately get a DK barrel on entering that level
+			-- so, on that level (0x21), we can use a different address to track whether we have two Kongs, and if that stops being true, we swap
+			local _, bleak_two_kongs_curr, bleak_two_kongs_prev = update_prev("bleak_two_kongs", memory.read_u8(0x5B0, "WRAM") == 0x40)
+			if memory.read_u8(0xC0) == 0x21 and bleak_two_kongs_curr == false and bleak_two_kongs_prev == true
+			then
+				return true, 10
+			end
+			return false
 		end,
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function() 
@@ -4941,9 +4953,21 @@ local gamedata = {
 			local activeplayer_changed, activeplayer_curr, activeplayer_prev = update_prev("activeplayer", memory.read_u8(0x0004C6, "WRAM"))
 			-- 0 == p1, 1 == p2, this changes when active player's life count toggles between p1 and p2 on the 2p contest map
 			-- it also changes in 2p team mode when DK/Diddy tags the other in, but lives won't change then! 
-			return lives_changed and lives_curr < lives_prev and not activeplayer_changed
+			if lives_changed and lives_curr < lives_prev and not activeplayer_changed
 				and not (memory.read_u8(0x0006DE, "WRAM") == 1)
 				-- not on map
+			then
+				return true
+			end
+			-- in the snowball fight level, iframes won't trigger a swap, they're stored somewhere else/differently
+			-- you immediately get a DK barrel on entering that level
+			-- so, on that level (0x21), we can use a different address to track whether we have two Kongs, and if that stops being true, we swap
+			local _, bleak_two_kongs_curr, bleak_two_kongs_prev = update_prev("bleak_two_kongs", memory.read_u8(0x5B6, "WRAM") == 0x40)
+			if memory.read_u8(0xC0) == 0x21 and bleak_two_kongs_curr == false and bleak_two_kongs_prev == true
+			then
+				return true
+			end
+			return false
 		end,
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function() 

@@ -208,6 +208,7 @@ plugin.description =
 	-Ninjawarriors (SNES), 1p
 	-PaRappa the Rapper (PSX), 1p - shuffles on dropping a rank
 	-Pebble Beach Golf Links (Sega Saturn), 1p - Tournament Mode, shuffles after stroke
+	-Pepsiman (PSX), 1p
 	-Pictionary (NES)
 	-Pocky & Rocky (SNES), 1-2p
 	-Pocky & Rocky 2 (SNES), 1-2p
@@ -7341,10 +7342,38 @@ local gamedata = {
 		ActiveP1=function() return true end, -- p1 is always active!
 		other_swaps=function()
 			-- Swap if you lose your meat power up through damage, but not from the timer.
-			local meatlevel_changed, _, _ = update_prev('meatlevel', memory.read_u8(0x0DBA, "Main Memory"))
-			local _, _, meatseconds_prev = update_prev('meatseconds', memory.read_u8(0x0DC1, "Main Memory"))
+			local meatlevel_changed, meatlevel_cur, meatlevel_prev = update_prev('meatlevel', memory.read_u8(0x0DBA, "Main Memory"))
+			local _, _, meatseconds_prev = update_prev('meatseconds', memory.read_u8(0x0DC2, "Main Memory"))
 			local _, _, meatmillis_prev = update_prev('meatmillis', memory.read_u8(0x0DC1, "Main Memory"))
-			return meatlevel_changed and meatseconds_prev ~= 0 and meatmillis_prev ~= 1 end,
+			return meatlevel_changed and meatlevel_cur < meatlevel_prev and (meatseconds_prev ~= 0 or meatmillis_prev ~= 1) end,
+	},
+	['Pepsiman_PSX']={ -- Pepsiman (Japan)
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_u8(0x0958A8, "MainRAM") end,
+		p1getlc=function() return memory.read_u8(0x095770, "MainRAM") end,
+		maxhp=function() return 3 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x095770 end,
+		LivesWhichRAM=function() return "MainRAM" end,
+		maxlives=function() return 69 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+		other_swaps=function()
+			-- Swap for "boss" levels where something chases you towards the screen.
+			-- Damage seems to be in distance rather than health points or something like that, so the target value differs between stages and changes each frame after hit until the target.
+			local chase_damage = memory.read_u8(0x0CEF78, "MainRAM")		
+			
+			-- i-frames are at a different address per stage, but always goes from 0 to 60 when hit.
+			local stage1_iframes_changed, stage1_iframes_cur, stage1_iframes_prev = update_prev('stage1_iframes', memory.read_u8(0x0F80B0, "MainRAM"))
+			local stage2_iframes_changed, stage2_iframes_cur, stage2_iframes_prev = update_prev('stage2_iframes', memory.read_u8(0x0F8004, "MainRAM"))
+			local stage3_iframes_changed, stage3_iframes_cur, stage3_iframes_prev = update_prev('stage3_iframes', memory.read_u8(0x0F57DC, "MainRAM"))
+			local stage4_iframes_changed, stage4_iframes_cur, stage4_iframes_prev = update_prev('stage4_iframes', memory.read_u8(0x0F4AD8, "MainRAM"))
+			
+			return
+			(stage1_iframes_changed and stage1_iframes_cur == 60 and stage1_iframes_prev == 0 and chase_damage > 32) or
+			(stage2_iframes_changed and stage2_iframes_cur == 60 and stage2_iframes_prev == 0 and chase_damage > 114) or
+			(stage3_iframes_changed and stage3_iframes_cur == 60 and stage3_iframes_prev == 0 and chase_damage > 88) or
+			(stage4_iframes_changed and stage4_iframes_cur == 60 and stage4_iframes_prev == 0 and chase_damage > 32)
+			end,
 	},
 
 }

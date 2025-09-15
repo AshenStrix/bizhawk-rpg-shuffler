@@ -330,6 +330,9 @@ plugin.description =
 
 local NO_MATCH = 'NONE'
 
+-- debugging settings
+local PAUSE_ON_SWAP = false -- pause whenever a swap would occur
+
 local tags = {}
 local tag
 local gamemeta
@@ -7532,9 +7535,10 @@ if type(tonumber(which_level)) == "number" then
 			debug_timer = -delay
 			swap_game_delay(delay)
 			swap_scheduled = true
-			if not settings.SuppressLog then
+			if not settings.SuppressLog or settings.DebugSingleGame then
 				log_console('Chaos Shuffler: swap scheduled for %s (frame: %d, delay: %d)', tag, frames_since_restart, delay)
 			end
+			if PAUSE_ON_SWAP then client.pause() end
 		end
 	end
 	

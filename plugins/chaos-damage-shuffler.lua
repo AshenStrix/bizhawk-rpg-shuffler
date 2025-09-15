@@ -7183,7 +7183,7 @@ local gamedata = {
 	['TecmoSuperBowl_NES']={ -- Tecmo Super Bowl NES
 		func=TecmoSuperBowl_NES_swap,
 		-- do not shuffle if we are watching the scoreboard for skipped in-season games
-		gmode=function() return memory.read_u8(0x0075, "RAM") ~= 0x33 end,
+		gmode=function() return memory.read_u8(0x0075, "RAM") ~= 0x33 and memory.read_u8(0x0070, "RAM") ~= 0xFF end,
 		get_p1_possession=function() return memory.read_u8(0x0070, "RAM") < 0x80 end,
 		get_whatdown=function() return memory.read_u8(0x0077, "RAM") end,
 		get_picking_play=function() return memory.read_u8(0x030A, "RAM") == 0x22 or memory.read_u8(0x030A, "RAM") == 0x1E end,

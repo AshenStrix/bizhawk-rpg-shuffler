@@ -1,7 +1,7 @@
 local plugin = {}
 
 plugin.name = "Chaos Damage Shuffler"
-plugin.author = "authorblues and kalimag (MMDS), Phiggle, Rogue_Millipede, Shadow Hog, Smight, endrift, ZoSym, Extreme0, L Thammy"
+plugin.author = "authorblues and kalimag (MMDS), Phiggle, Rogue_Millipede, Shadow Hog, expeditedDelivery, Smight, endrift, ZoSym, Extreme0, L Thammy"
 plugin.minversion = "2.6.3"
 plugin.settings =
 {
@@ -9,7 +9,7 @@ plugin.settings =
 	{ name='ClingerSpeed', type='boolean', label='BT NES: Auto-Clinger-Winger (unpatched ONLY)' },
 	{ name='BTSNESRash', type='boolean', label='BT SNES: I want Rash, pick 2P, give Pimple 1 HP'},
 	{ name='SuppressLog', type='boolean', label='Suppress "ROM unrecognized"/"on Level 1" logs'},
-	{ name='DebugSingleGame', type='boolean', label='Rearm the shuffler logic even if no new game was loaded' },
+	{ name='DebugSingleGame', type='boolean', label='Debugging: Rearm the shuffler logic even if no new game was loaded' },
 	{ name='SMW2YI_MiniBonusSwaps', type='boolean', label="Yoshi's Island: Shuffle on Mini Battle damage/loss", default=true},
 	{ name='IceClimberBonusSwaps', type='boolean', label="Ice Climber (NES): Shuffle on failing the bonus game"},
 	{ name='grace', type='number', label="Minimum grace period before swapping (won't go < 10 frames)", default=10 },
@@ -328,6 +328,8 @@ plugin.description =
 	-- You still have to beat the boss. If you use Infinite Lives, this could make Clinger-Winger fairly trivial.
 
 	Rash 1-player mode in Battlemaniacs (SNES): see above! Start in 2p, let Pimple die and let the continue timer run out to deathwarp. Make sure your 2p controller is mapped the same as 1p aside from Start, so you can progress. In the future, this may be more automated.
+
+	Debugging: Rearm the shuffler logic even if no new game was loaded - useful for testing new games/revisions if not using the damage-debug plugin. You can set PAUSE_ON_SWAP in the plugin to true if you want BizHawk to pause every time a swap would otherwise happen.
 
 	Suppress Logs: if you do not want the lua console log to tell you about file naming errors, or unrecognized ROMs. This can help keep the log cleaner if you are also using the Mega Man Damage Shuffler or other plugins!
 

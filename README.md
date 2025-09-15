@@ -5,7 +5,7 @@
 * Direct Chaos Shuffler links for those who already know what they are doing: [hash database](https://github.com/Phiggle/bizhawk-shuffler-2/blob/main/plugins/chaos-shuffler-hashes.dat), [plugin](https://github.com/Phiggle/bizhawk-shuffler-2/blob/main/plugins/chaos-damage-shuffler.lua) (click on the plugin for instructions and a list of supported games!)
 
 ## Chaos Damage Shuffler: Basics
-* Get shuffled when your character takes damage in a variety of games and senses. Click on the plugin link below for the full list!
+* Get shuffled when your character takes damage in a variety of games and senses. Click on the plugin link above for the full list!
 * Game highlights: several games from the Battletoads, Mario, Metroid, Legend of Zelda, and Castlevania series, as well as Super Mario Kart, F-Zero, and some "wait, this shuffles?" nonsense like Anticipation (NES), Family Feud (SNES), Monopoly (NES), and much more.
 * Infinite lives are generally supported.
 * Multiplayer shuffling is generally supported.
@@ -23,6 +23,6 @@
 
 ## Chaos Damage Shuffler: Thanks
 * **This plugin is a mod of the excellent work by authorblues and kalimag on the Mega Man damage shuffler.** I'd have no idea what I was doing (well, moreso) without their work.
-* A massive **thank you to Rogue_Millipede, Shadow Hog, kalimag, Smight, endrift, ZoSym, and Extreme0** is also in order for their work on this plugin, adding shuffling for many new games and vastly improving it!
+* A massive **thank you to Rogue_Millipede, Shadow Hog, kalimag, expeditedDelivery, Smight, endrift, ZoSym, and Extreme0** is also in order for their work on this plugin, adding shuffling for many new games and vastly improving it!
 * Finally, thank you to Diabetus, Smight, and ConstantineDTW for extensive playthroughs that tracked down bugs.
 * Did I mention I am a novice and do this on a pretty sporadic basis? I am very grateful for reports of any bugs or general mistakes/bad ideas!

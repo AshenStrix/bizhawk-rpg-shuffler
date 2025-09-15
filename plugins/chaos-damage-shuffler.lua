@@ -191,6 +191,7 @@ plugin.description =
 	-Lion King 2 (bootleg) (Genesis/Mega Drive), 1p
 	-Magical Kid's Doropie / Krion Conquest (NES), 1p
 	-Marble Madness (NES), 1-2p
+	-Mario Kart: Super Circuit (SNES), 1p, Grand Prix - shuffles on collisions with other karts (lost coins or have 0 coins), falls
 	-Mario Paint (SNES), joystick hack, Gnat Attack, 1p
 	-Mega Q*Bert (Genesis/Mega Drive), 1p
 	-Mendel Palace (NES), 1p
@@ -7398,6 +7399,43 @@ local gamedata = {
 			(stage3_iframes_changed and stage3_iframes_cur == 60 and stage3_iframes_prev == 0 and chase_damage > 88) or
 			(stage4_iframes_changed and stage4_iframes_cur == 60 and stage4_iframes_prev == 0 and chase_damage > 32)
 			end,
+	},
+	['MarioKartSuperCircuit_GBA']={ -- Mario Kart: Super Circuit (GBA), 1p, GP mode
+		func=singleplayer_withlives_swap,
+		gmode=function() return memory.read_u8(0x3634, "IWRAM") > 0 -- how many racers? if 0, we aren't in a race
+			end, 
+		p1gethp=function() return memory.read_u8(0x3D10, "IWRAM") end, -- coins; we'll only swap if these drop on being bumped
+		p1getlc=function() return 0 end, -- not swapping on using a continue; the timing of "losing a life" that way is not desirable
+		maxhp=function() return 99 end,
+		minhp=-1,
+		-- TODO: squish
+		swap_exceptions=function() 
+			local bumpcount_changed, bumpcount_curr, bumpcount_prev = update_prev("bumpcount", memory.read_u8(0x3AE8, "IWRAM"))
+			local coins_changed, coins_curr, coins_prev = update_prev("coins", memory.read_u8(0x3D10, "IWRAM"))
+			local _, hits_curr, hits_prev = update_prev("hits", memory.read_u8(0x3AEA, "IWRAM"))
+			return 
+				(coins_changed and (coins_curr < coins_prev) 
+					and not (bumpcount_curr > bumpcount_prev or hits_curr > hits_prev)) -- if coins dropped with no bump, like Lakitu's fee or Boo stealing them, don't swap
+				or
+				memory.read_u8(0x3A28, "IWRAM") ~= 7 -- 7 == in-race camera mode; prevents swaps after end of race/loading next race
+			end, 
+		other_swaps=function()
+			local spinningout_changed, spinningout_curr = update_prev("spinningout", math.floor(memory.read_u8(0x3BF0, "IWRAM")/16) == 1)
+			if (spinningout_changed == true and spinningout_curr == true) then return true end
+			local fell_changed, fell_curr = update_prev("fell", memory.read_u8(0x3C10, "IWRAM") > 1)
+			-- 0 on road, 1 jumping/skipping over water, 2-8 are in pits/rescued by lakitu
+			if (fell_changed == true and fell_curr == true) then return true end
+			local _, hits_curr, hits_prev = update_prev("hits", memory.read_u8(0x3AEA, "IWRAM"))
+			-- counts being hit by items, including banana peels that otherwise wouldn't swap you
+			if hits_prev and hits_curr > hits_prev then return true end
+			return false
+		end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x000C end,
+		LivesWhichRAM=function() return "IWRAM" end,
+		maxlives=function() return 3 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+		delay=5, -- good to give a slightly higher delay to make the damage more readable to the player
 	},
 
 }

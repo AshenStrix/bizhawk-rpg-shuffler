@@ -420,19 +420,6 @@ local function somari_swap(gamemeta)
 	end
 end
 
-local function demonscrest_swap(gamemeta)
-	return function()
-		local hp_changed, hp, prev_hp = update_prev('hp', gamemeta.p1gethp())
-		local living_changed, living, prev_living = update_prev('living', gamemeta.p1getliving())
-		local scene_changed, scene, prev_scene = update_prev('scene', gamemeta.p1getscene())
-		return
-			((hp_changed and hp < prev_hp and living == 1) or -- Firebrand just took damage
-			(living_changed and living == 45 and prev_living == 1 and hp == 0)) -- Firebrand just died
-			and
-			scene ~= 37 -- 37 is the start of the credits for the Good and True endings, and HP drops to 2 there for some reason.
-	end
-end
-
 local function FamilyFeud_SNES_swap(gamemeta)
 	return function()
 		local strike_changed, strike, prev_strike = update_prev('strike', gamemeta.getstrike()) 
@@ -4000,10 +3987,16 @@ local gamedata = {
 		ActiveP1=function() return true end, -- p1 is always active!
 	},
 	['DemonsCrest']={ -- Demon's Crest (SNES)
-		func=demonscrest_swap,
-		p1gethp=function() return memory.read_u8(0x1062, "WRAM") end,
-		p1getliving=function() return memory.read_u8(0x00E7, "WRAM") end,
-		p1getscene=function() return memory.read_u8(0x01FFFC, "WRAM") end, -- value changes on scene changes
+		func=singleplayer_withlives_swap,
+		gmode=function() return (memory.read_u8(0x01FFFC, "WRAM") ~= 37 and memory.read_u8(0x01FFFC, "WRAM") ~= 43) end, -- not the ending cutscenes, where hp mysteriously drops
+		p1gethp=function() return (memory.read_u8(0x1062, "WRAM") * 2) + (memory.read_u8(0x1061, "WRAM") / 0x80) end,
+		p1getlc=function() 
+			local dead_changed, dead_curr, dead_prev = update_prev("dead", memory.read_u8(0x00E7, "WRAM"))
+			if dead_changed == true and dead_curr == 45 and dead_prev == 1 then return 0
+				else return 1
+			end
+		end,
+		maxhp=function() return 40 end,
 		CanHaveInfiniteLives=false -- you always have infinite lives in Demon's Crest, so "enabling" them does not apply
 	},
 	['FamilyFeud_SNES']={ -- Family Feud (SNES)

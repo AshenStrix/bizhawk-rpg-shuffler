@@ -3455,6 +3455,7 @@ local gamedata = {
 		get_iframes=function() return memory.read_u8(0x0CA9F3, "Main RAM") end,
 		get_health=function() return memory.read_u16_le(0x0F7410, "Main RAM") end,
 		other_swaps=function() return false end,
+		grace=60,
 	},
 	['CV_PoR']={ -- Portrait of Ruin, DS
 		func=jonathan_charlotte_swap,
@@ -3464,6 +3465,7 @@ local gamedata = {
 		get_jonathan_iframes=function() return memory.read_u8(0x0FCB45, "Main RAM") end,
 		get_charlotte_iframes=function() return memory.read_u8(0x0FCCA5, "Main RAM") end,
 		get_health=function() return memory.read_u16_le(0x11216C, "Main RAM") end,
+		grace=60,
 	},
 	['CV_OoE']={ -- Order of Ecclesia, DS
 		-- checking for iframes to not swap on dominus etc (except on death)
@@ -3473,6 +3475,7 @@ local gamedata = {
 		get_iframes=function() return memory.read_u8(0x1098E5, "Main RAM") end,
 		get_health=function() return memory.read_u16_le(0x1002B4, "Main RAM") end,
 		other_swaps=function() return false end,
+		grace=60,
 	},
 	['MetroidNes']={ -- Metroid, NES
 		-- bomb jumping sets iframes, so must check health too

@@ -430,126 +430,6 @@ local function FamilyFeud_SNES_swap(gamemeta)
 		end
 	end
 
---BATTLEMANIACS
--- This is the generic_swap from the Mega Man Damage Shuffler, modded to cover 2 potential players.
--- You can play as Pimple, Rash, or both, so the shuffler needs to monitor both toads.
--- They have the same max HP.
--- In BT SNES, damage should register even if a pip of health is not eliminated by an attack there.
-local function battletoads_snes_swap(gamemeta)
-	return function(data)
-
-		local p1currhp = gamemeta.p1gethp()
-		local p1currlc = gamemeta.p1getlc()
-		local p1currsprite = gamemeta.p1getsprite()
-		local p2currhp = gamemeta.p2gethp()
-		local p2currlc = gamemeta.p2getlc()
-		local p2currsprite = gamemeta.p2getsprite()
-		
-		-- togglechecks handle when health/lives drop because of a sudden change in game mode (like a level change)
-		currtogglecheck = false
-		if gamemeta.gettogglecheck ~= nil then
-			currtogglecheck = gamemeta.gettogglecheck()
-		end
-
-		local maxhp = gamemeta.maxhp()
-		local minhp = gamemeta.minhp or 0
-
-		-- health must be within an acceptable range to count
-		-- ON ACCOUNT OF ALL THE GARBAGE VALUES BEING STORED IN THESE ADDRESSES
-		if p1currhp < minhp or p1currhp > maxhp then
-			return false
-		elseif p2currhp < minhp or p2currhp > maxhp then
-			return false
-		end
-		
-		-- retrieve previous health and lives before backup
-		local p1prevhp = data.p1prevhp
-		local p1prevlc = data.p1prevlc
-		local p1prevsprite = data.p1prevsprite
-		local p2prevhp = data.p2prevhp
-		local p2prevlc = data.p2prevlc
-		local p2prevsprite = data.p2prevsprite
-		local prevtogglecheck = data.prevtogglecheck
-
-		data.p1prevhp = p1currhp
-		data.p1prevlc = p1currlc
-		data.p1prevsprite = p1currsprite
-		data.p2prevhp = p2currhp
-		data.p2prevlc = p2currlc
-		data.p2prevsprite = p2currsprite
-		data.prevtogglecheck = currtogglecheck
-		
-		-- if we have found a toggle flag, that changes at the same time as a junk hp/lives change, then don't swap.
-		if prevtogglecheck ~= nil and prevtogglecheck ~= currtogglecheck then
-			return false
-		end
-		
-		-- BT SNES likes to do a full 0-out of some memory values when you load a level.
-		-- That should NOT shuffle!
-		-- Return false if that is happening.
-		-- TODO: fold this function into twoplayers_withlives_swap, add and use more versatile swap_exceptions for this sort of thing
-		
-		if p1currhp == 0 and p2currhp == 0 and -- values dropped to 0
-			p1currsprite == 0 and p2currsprite == 0 -- if both are 0, neither player is even on screen
-		then
-			return false
-		end
-
-		-- this delay ensures that when the game ticks away health for the end of a level,
-		-- we can catch its purpose and hopefully not swap, since this isnt damage related
-		if data.p1hpcountdown ~= nil and data.p1hpcountdown > 0 then
-			data.p1hpcountdown = data.p1hpcountdown - 1
-			if data.p1hpcountdown == 0 and p1currhp > minhp then
-				return true
-			end
-		end
-		
-		if data.p2hpcountdown ~= nil and data.p2hpcountdown > 0 then
-			data.p2hpcountdown = data.p2hpcountdown - 1
-			if data.p2hpcountdown == 0 and p2currhp > minhp then
-				return true
-			end
-		end
-
-		-- if the health goes to 0, we will rely on the life count to tell us whether to swap
-		if p1prevhp ~= nil and p1currhp < p1prevhp then
-			data.p1hpcountdown = gamemeta.delay or 3
-		elseif p2prevhp ~= nil and p2currhp < p2prevhp then
-			data.p2hpcountdown = gamemeta.delay or 3
-		end
-		
-		-- check to see if the life count went down
-		
-		if p1prevlc ~= nil and p1currlc == (p1prevlc - 1) then
-			return true
-		elseif p2prevlc ~= nil and p2currlc == (p2prevlc - 1) then
-			return true
-		end
-		
-		-- In Battletoads SNES bonus levels, your pins/domino count can go down without your health going down.
-		-- BUT NO, WE NEED TO SHUFFLE ON THOSE!!
-		-- but not once you're dead. That countdown shouldn't count.
-		-- I CANNOT IMAGINE WHY, but this does not count up in a linear fashion.
-		
-		-- To simplify things, we will just swap when the "I've been hit" sprite is called.
-		
-		-- TODO: fold this function into twoplayers_withlives_swap, and and use more versatile other_swaps for this sort of thing
-		
-		if memory.read_u8(0x00002C, "WRAM") == 2 or memory.read_u8(0x00002C, "WRAM") == 8 then
-			-- we are in the proper level, 2 (Pins) or 8 (Dominoes)
-			if p1prevsprite ~= p1currsprite and p1currsprite == 128 then
-				-- p1 was JUST hit (prior value was not the same)
-				return true
-			elseif p2prevsprite ~= p2currsprite and p2currsprite == 236 then
-				-- p2 was JUST hit (prior value was not the same)
-				return true
-			end
-		end
-		
-		return false
-	end
-end
-
 local function singleplayer_withlives_swap(gamemeta)
 	return function(data)
 		-- if a method is provided and we are not in normal gameplay, don't ever swap
@@ -2416,6 +2296,7 @@ local gamedata = {
 	},
 	['BT_SNES']={ -- Battletoads in Battlemaniacs for SNES
 		func=twoplayers_withlives_swap,
+		gmode=function() return memory.read_s8(0x000059, "WRAM") == 0x0F end, -- must be fully faded in to count hp and lives etc
 		p1gethp=function() return memory.read_s8(0x000E5E, "WRAM") end,
 		p2gethp=function() return memory.read_s8(0x000E60, "WRAM") end,
 		p1getlc=function() return memory.read_s8(0x000028, "WRAM") end,
@@ -2424,11 +2305,17 @@ local gamedata = {
 		swap_exceptions=function()
 			-- do not swap on changing level
 			-- on level change, HP drops to 0, then springs back up to max, this would otherwise cause a false swap
-			local level_changed = update_prev("level", memory.read_u8(0x00002C, "WRAM"))
+			local level_changed, level_curr = update_prev("level", memory.read_u8(0x00002C, "WRAM"))
+			local p1nosprite_changed, p1nosprite_curr = update_prev("p1nosprite", memory.read_u8(0x000AEE, "WRAM") == 0)
+			local p2nosprite_changed, p2nosprite_curr = update_prev("p2nosprite", memory.read_u8(0x000AF0, "WRAM") == 0)
 			if level_changed then return true end
-			-- if there are no sprites loaded, don't swap
-			if memory.read_s8(0x000E5E, "WRAM") == 0 and memory.read_s8(0x000E60, "WRAM") == 0
-			then
+			-- BUG: double-swaps in Roller Coaster (6) happen because HP suddenly drops to 0, on the VERY LAST FRAME before going to black and on a different frame from lives
+			-- however, sprites also disappear on that frame
+			-- so, don't swap on that frame, and we're good
+			if level_curr == 6 and 
+				((p1nosprite_changed == true and p1nosprite_curr == true) or 
+				(p2nosprite_changed == true and p2nosprite_curr == true))
+			then 
 				return true
 			end
 			return false

@@ -5847,33 +5847,50 @@ local gamedata = {
 	['PockyRocky2_SNES']={ -- Pocky & Rocky 2, SNES
 		func=twoplayers_withlives_swap,
 		-- the two players work VERY DIFFERENTLY from one another in this game
-		-- p1 appears to have their health stored at 0x19CE in an insane way (between 2 and 12, or 0x02 and 0x0C) that we will transform
-		gmode=function() return memory.read_u8(0x19CE, "WRAM") < 0x0E end, -- just ignore nonsense values
+		-- p1 appears to have their health stored at 0x19CE in an insane way (between 2 and 12, or 0x02 and 0x0C) and at 2B88 (three states: base, kimono, armor)
+		gmode=function() 
+			-- only track health if pocky's health is valid 
+			return memory.read_u16_le(0x2B88, "WRAM") == 0x1815  
+			or memory.read_u16_le(0x2B88, "WRAM") == 0x0015  
+			or memory.read_u16_le(0x2B88, "WRAM") == 0x6D29  
+		end,
 		p1gethp=function()
 			local pocky_states = {
-				[0x04] = 1, -- none
-				[0x02] = 2, -- kimono
-				[0x06] = 3, -- kimono + armor item
-				[0x08] = 4, -- bunny ears
-				[0x0C] = 5, -- kimono + bunny ears
-				[0x0A] = 6, -- kimono + armor + bunny ears
+				[0x1815] = 1,
+				[0x0015] = 2, -- kimono
+				[0x6D29] = 3, -- kimono + armor item
 			}
-			return pocky_states[memory.read_u8(0x19CE, "WRAM")] or 0
+			-- also track bunny ears, 0 if not present and 254 if there
+			if memory.read_u8(0x1901, "WRAM") == 254
+			then 
+				return pocky_states[memory.read_u16_le(0x2B88, "WRAM")] + 1
+			else 
+				return pocky_states[memory.read_u16_le(0x2B88, "WRAM")] or 0
+			end
 		end,
-		p1getlc=function() return memory.read_u8(0x19F4, "WRAM") end, -- the only thing that is normal in this game!
+		p1getlc=function() return memory.read_u8(0x19F4, "WRAM") end, -- at least lives work normally here!
 		p2gethp=function() 
 			if memory.read_u8(0x18CE, "WRAM") == 1 -- 2p is human-controlled
-				then return memory.read_u8(0x05EA, "WRAM") + 1 -- we do want to shuffle on 0, because there are no lives
+				or (memory.read_u8(0x19CE, "WRAM") > 0x80) -- p1 and p2 have merged
+			then return memory.read_u8(0x05EA, "WRAM")
 			else
-				return -1 -- if 2p is a CPU, just return HP as something that won't shuffle (below minhp)
+				return 4 -- if 2p is separate/CPU, don't track them, and act like they have max HP
 			end
 		end,
 		p2getlc=function() return 0 end, -- the second player respawns after a cooldown
-		maxhp=function() return 6 end,
+		maxhp=function() return 5 end,
+		minhp=-1, -- we do want to shuffle on 0, because 2p does not use lives
+		swap_exceptions=function()
+			-- if on merging/unmerging frame, don't swap, so we can start tracking p2's hp
+			local merged_changed = update_prev("merged", memory.read_u8(0x19CE, "WRAM") >= 0x80)
+			local lives_changed, lives_curr, lives_prev = update_prev("lives", memory.read_u8(0x19F4, "WRAM"))
+			if merged_changed and not lives_changed then return true end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function() return 0x19F4 end,
 		LivesWhichRAM=function() return "WRAM" end,
-		maxlives=function() return 5 end,
+		maxlives=function() return 4 end,
 		ActiveP1=function() return true end, -- p1 is always active! p2 doesn't need lives so don't specify anything for them!
 		grace=40,
 	},

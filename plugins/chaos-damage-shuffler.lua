@@ -5553,9 +5553,11 @@ local gamedata = {
 	},
 	['MetalStorm_NES']={ -- Metal Storm, NES
 		func=singleplayer_withlives_swap,
-		p1gethp=function() return memory.read_u8(0x05D0, "RAM") + 1 end, -- add 1 because no armor == 0
+		-- armor: sets 0x05D0 to 0x80 in vanilla; in 3-hit hack, sets to 3 and counts down by 1 on each hit
+		p1gethp=function() return memory.read_u8(0x05D0, "RAM") end,
 		p1getlc=function() return memory.read_u8(0x0716, "RAM") end,
-		maxhp=function() return 4 end,
+		maxhp=function() return 0x80 end,
+		minhp=-1,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x716 end,

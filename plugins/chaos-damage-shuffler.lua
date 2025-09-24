@@ -5176,11 +5176,14 @@ local gamedata = {
 				return memory.read_u8(0x0093, "RAM")
 			end
 		end,
-		gettogglecheck=function() 
+		swap_exceptions=function()
 			local character_changed, character_curr, character_prev = update_prev("character", memory.read_u8(0x0050, "RAM"))
+			local lives_changed = update_prev("lives", memory.read_u8(0x0091, "RAM"))
 			-- characters have different max health.
-			-- if active character swaps, health may go down as a result, don't swap on that.
-			return character_changed
+			-- if active character swaps, health may go down as a result, don't swap on that
+			-- however, character change can also happen on death (you might switch back to the kid if another char dies)
+			if character_changed and not lives_changed then return true end
+			return false
 		end,
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function() return 0x0091 end,
@@ -7581,6 +7584,26 @@ function plugin.on_game_load(data, settings)
 			and memory.read_u8(0x00002A, "WRAM") > 0 and memory.read_u8(0x00002A, "WRAM") < 255 -- have we started playing?
 		then
 			memory.write_u8(0x00002A, 69, "WRAM") -- if so, set lives to 69. Nice.
+		end
+	end
+	
+	-- Little Samson (NES)
+	-- goal: if you lose an ally, detect that and resurrect them on swapping in
+	if tag == "LittleSamson_NES" then
+		if settings.InfiniteLives == true -- is Infinite Lives enabled?
+		-- check if level is high enough to have all the teammates (not 0 through 3) and if "all teammates selectable" is set
+			and memory.read_u8(0x003F, "RAM") > 3 and memory.read_u8(0x0090, "RAM") % 16 == 0xF
+		then
+		-- if ally has 0 health, they died; set ally's hp to their own max hp to revive them
+			if memory.read_u8(0x0098, "RAM") == 0 -- D
+			then memory.write_u8(0x0098, memory.read_u8(0x0094, "RAM"), "RAM")
+			end 
+			if memory.read_u8(0x0099, "RAM") == 0 -- G
+			then memory.write_u8(0x0099, memory.read_u8(0x0095, "RAM"), "RAM")
+			end 
+			if memory.read_u8(0x009A, "RAM") == 0 -- M
+			then memory.write_u8(0x009A, memory.read_u8(0x0096, "RAM"), "RAM")
+			end 
 		end
 	end
 

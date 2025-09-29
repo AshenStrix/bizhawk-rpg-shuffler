@@ -149,6 +149,7 @@ plugin.description =
 	-Captain Novolin (SNES), 1p
 	-Chip and Dale Rescue Rangers 1 (NES), 1-2p
 	-Chip and Dale Rescue Rangers 2 (NES), 1-2p
+	-Crash Bandicoot 1-3 (PSX), 1p, US version
 	-Crash Bandicoot 4 (Bootleg) (NES), 1p
 	-Darkwing Duck (NES), 1p
 	-Demon's Crest (SNES), 1p
@@ -394,6 +395,94 @@ local function update_prev(key, value)
 	prevdata[key] = value
 	local changed = prev_value ~= nil and value ~= prev_value
 	return changed, value, prev_value
+end
+
+-- Sets prevdata[key] to start_value.
+-- If reset is true, the start_value always replaces any previous value.
+-- if keep_highest is true, start_value only replaces a lower previous value.
+-- Otherwise, any existing previous value is kept.
+local function start_countdown(key, start_value, reset, keep_highest)
+	assert(key ~= nil and type(start_value) == "number", "start_countdown requires both a key and a numeric start_value")
+	local prev_value = prevdata[key]
+	if reset or type(prev_value) ~= "number" or (keep_highest and start_value > prev_value) then
+		prevdata[key] = start_value
+		return true
+	else
+		return false -- countdown not changed
+	end
+end
+
+-- Decrements countdown in prevdata[key].
+-- If the countdown has reached 0, the countdown is cleared and the function returns true.
+-- Otherwise, returns false and the previous value.
+local function update_countdown(key)
+	local prev_value = prevdata[key]
+	if type(prev_value) == "number" then
+		if prev_value > 0 then
+			prevdata[key] = prev_value - 1
+			return false, prev_value - 1
+		else
+			prevdata[key] = nil
+			return true
+		end
+	end
+	return false
+end
+
+-- If value is a number between min and max (inclusive), return value.
+-- Otherwise, return fallback (or nil if unspecified)
+local function value_in_range(value, min, max, fallback)
+	if type(value) == 'number' and value >= min and value <= max then
+		return value
+	else
+		return fallback
+	end
+end
+
+-- Follow a 32-bit pointer chain, given a start address and a series of offsets.
+-- Returns the final address in the chain, or nil if any addresses in the chain are invalid.
+-- If restricted is true, only the typical address space 0x8000_0000-0x801F_FFFF is considered valid.
+-- If restricted is false, other valid but uncommon ways to address ram are allowed.
+function follow_psx_ptr(restricted, address, ...)
+	if select('#', ...) == 0 then -- assume 0 offset if none are specified
+		return follow_psx_ptr(restricted, address, 0)
+	end
+
+	-- PSX ram is mirrored at multiple locations, see https://psx-spx.consoledev.net/memorymap/
+	-- BizHawk doesn't let us read from KSEG0/1 through the System Bus domain, so we need to mask out the segment and read from main memory.
+	-- This might be a little bit overengineered for the common use case. Doesn't currently handle scratchpad (DCache) addresses.
+	local function parse_address(address)
+		local segment = (address & 0xE0000000) >> 28
+		local phys_address = address & ~0xE0000000
+		if not restricted and phys_address < 0x800000 then
+			phys_address = phys_address % 0x200000
+		end
+		return phys_address, segment
+	end
+	local function is_valid(address, restricted)
+		phys_address, segment = parse_address(address)
+		return phys_address >= 0 and phys_address < 0x200000 and
+			(segment == 0x8 or (not restricted and (segment == 0x0 or segment == 0xA)))
+	end
+	local function read_ptr(address)
+		if address & 3 ~= 0 then -- unaligned read is invalid
+			return math.mininteger
+		end
+		return mainmemory.read_u32_le((parse_address(address)))
+	end
+
+	if not is_valid(address) then
+		error(string.format("Invalid PSX ram address 0x%.8X", address))
+	end
+
+	for i = 1, select('#', ...) do -- loop through offset varargs
+		local offset = select(i, ...)
+		address = read_ptr(address) + offset
+		if not is_valid(address, restricted) then
+			return nil
+		end
+	end
+	return (parse_address(address)) -- need the () here to return only the first value
 end
 
 local function sml1_swap(gamemeta)
@@ -7398,6 +7487,158 @@ local gamedata = {
 		delay=5, -- good to give a slightly higher delay to make the damage more readable to the player
 	},
 
+	['CrashBandicoot1_PS1_USA']={
+		-- TODO: swap on death in bonus stages
+		func=function(gamemeta)
+			return function()
+				local active = gamemeta.get_active()
+				local _, deaths, prev_deaths = update_prev('deaths', gamemeta.get_deaths())
+				local _, shield, prev_shield = update_prev('shield', active and value_in_range(gamemeta.get_shield(), 0, 3) or false)
+				if not active or not shield then
+					return false
+				end
+				return (prev_deaths and deaths > prev_deaths) or
+				       (shield and prev_shield and shield < math.min(prev_shield, 2)) -- shield 3 is temp invincibility
+			end
+		end,
+		get_shield=function()
+			local addr = follow_psx_ptr(true, 0x0618CC, 0x189)
+			return addr and mainmemory.read_u8(addr)
+		end,
+		get_deaths=function()
+			return mainmemory.read_u24_le(0x0618A1)
+		end,
+		get_active=function()
+			return mainmemory.read_u8(0x061994) == 0 and -- not on the map
+			       mainmemory.read_u32_le(0x0566C0) == 3 and -- some kind of player state?
+				   value_in_range(mainmemory.read_u32_le(0x056710), 0x03, 0x37) and -- valid stage
+				   mainmemory.read_u32_le(0x061A30) == 0 -- not in demo
+		end,
+		CanHaveInfiniteLives = true,
+		LivesWhichRAM = function() return "MainRAM" end,
+		p1livesaddr=function()
+			return mainmemory.read_u8(0x061994) == 0 and -- are we in a stage?
+			       follow_psx_ptr(true, 0x80060DEC, 0x164+1) or -- stage-specific address
+			       0x0618EC -- map address
+		end,
+		maxlives=function() return 69 end,
+		ActiveP1=function() return true end,
+	},
+	['CrashBandicoot2_PS1_USA']={
+		func=function(gamemeta)
+			return function()
+				local active = gamemeta.get_active()
+
+				-- set to 4 by iframes and conveniently also upon death (pits, etc.)
+				local invuln_addr = follow_psx_ptr(true, 0x06CB10, 0x108)
+				local invuln_changed, invuln = update_prev("invuln", active and invuln_addr and mainmemory.read_u32_le(invuln_addr) or false)
+
+				if not active or not invuln_addr then
+					return false
+				end
+
+				--local stage = mainmemory.read_u8(0x06CB71)
+				local stage = mainmemory.read_u16_be(0x06CB70)
+				if stage == 0x07 then -- Cortex boss fight
+					-- hit obstacle
+					local collision_changed, collision = update_prev('collision', mainmemory.read_u32_le(0xACF2C) == 2 and mainmemory.read_u16_le(0xACF7C) == 2)
+					if collision_changed and collision then
+						return true, 8
+					end
+				end
+
+				return invuln_changed and invuln == 4
+			end
+		end,
+		get_active=function()
+			local state = mainmemory.read_u8(0x06CB82)
+			local stage = value_in_range(mainmemory.read_u16_be(0x06CB70), 0x03, 0x27)
+			local demo = mainmemory.read_u32_le(0x06CD14) > 0
+			return state == 1 and stage ~= nil and not demo
+		end,
+		CanHaveInfiniteLives = true,
+		LivesWhichRAM = function() return "MainRAM" end,
+		p1livesaddr=function()
+			local stage = value_in_range(mainmemory.read_u8(0x06CB71), 0x02, 0x27)
+			if stage == 0x02 then
+				return 0x06CBD1 -- warp room
+			elseif stage then
+				return follow_psx_ptr(true, 0x06CB10, 0x145)
+			end
+		end,
+		maxlives = function() return 69 end,
+		ActiveP1=function() return true end,
+	},
+	['CrashBandicoot3_PS1_USA']={
+		func=function(gamemeta)
+			return function()
+				local active = gamemeta.get_active()
+
+				-- set to 4 by iframes and conveniently also upon death (pits, etc.)
+				local invuln_addr = follow_psx_ptr(true, 0x068E98, 0x108)
+				local invuln_changed, invuln = update_prev("invuln", active and invuln_addr and mainmemory.read_u32_le(invuln_addr) or false)
+
+				if not active or not invuln_addr then
+					return false
+				end
+
+				local stage = mainmemory.read_u16_be(0x068EF8)
+				if stage == 0x14 or stage == 0x15 or stage == 0x20 or stage == 0x25 then -- Motorcycle stages
+					local anim_changed, anim = gamemeta.update_animation()
+					return anim_changed and (
+						anim == 0x31 or -- crash into cop car
+						anim == 0x34 or -- falling into pit
+						anim == 0x35 or -- off the track
+						anim == 0x36 -- lost race
+					), 30
+				elseif stage == 0x05 or stage == 0x13 or stage == 0x17 then -- N. Gin, Bye Bye Blimps, Mad Bombers (dogfights)
+					local health_addr = follow_psx_ptr(true, 0x060A90, 0xE5)
+					local _, health, prev_health = update_prev("plane_health", health_addr and
+						value_in_range(mainmemory.read_u8(health_addr), 0, 100) or false)
+					if health and prev_health and health < prev_health then
+						start_countdown("plane_hit", 16, true)
+					else
+						return update_countdown("plane_hit")
+					end
+				elseif stage == 0x1F then -- Rings of Power (air race)
+					local place = mainmemory.read_u32_le(0x0AF7F4)
+					local anim_changed, anim = gamemeta.update_animation()
+					if anim_changed and anim == 0x2B and place > 1 then -- race over, didn't come in first
+						return true, 60
+					end
+				end
+
+				return invuln_changed and invuln == 4
+			end
+		end,
+		get_active=function()
+			local state = mainmemory.read_u8(0x068F3D) -- stage transitions etc.
+			local stage = value_in_range(mainmemory.read_u16_be(0x068EF8), 0x03, 0x26) -- regular stages excluding hub, intro, etc.
+			local frame_counter = mainmemory.read_u32_le(0x068EEC)
+			local demo = mainmemory.read_u16_le(0x06909C) > 0
+
+			return state == 1 and
+				   not demo and
+				   frame_counter > 0 and
+			       stage ~= nil
+		end,
+		update_animation=function()
+			local anim_addr = follow_psx_ptr(true, 0x068E98, 0x1C)
+			return update_prev("animation", anim_addr and mainmemory.read_u32_le(anim_addr) or false)
+		end,
+		CanHaveInfiniteLives = true,
+		LivesWhichRAM = function() return "MainRAM" end,
+		p1livesaddr=function()
+			local stage = value_in_range(mainmemory.read_u16_be(0x068EF8), 0x02, 0x26)
+			if stage == 0x02 then
+				return 0x068F59 -- warp room
+			elseif stage then
+				return follow_psx_ptr(true, 0x068E98, 0x145)
+			end
+		end,
+		maxlives=function() return 69 end,
+		ActiveP1=function() return true end,
+	},
 }
 
 local backupchecks = {

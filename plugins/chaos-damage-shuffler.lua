@@ -2464,6 +2464,7 @@ local gamedata = {
 				return 2
 			end
 		end,
+		grace=60,
 	},
 	['MetroidSuper']={ -- Super Metroid, SNES
 		func=supermetroid_swap,

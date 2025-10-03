@@ -7406,6 +7406,7 @@ local gamedata = {
 	},
 	['BonksAdventure_TG16']={ -- Bonk's Adventure, TG-16 (U)
 		func=singleplayer_withlives_swap,
+		gmode=function() return memory.read_u8(0x1A18, "Main Memory") == 1 end,
 		p1gethp=function() return memory.read_u8(0x0DB4, "Main Memory") end,
 		p1getlc=function() return memory.read_u8(0x0DB1, "Main Memory") end,
 		maxhp=function() return 25 end,

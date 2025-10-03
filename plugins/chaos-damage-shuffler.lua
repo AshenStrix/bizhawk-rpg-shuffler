@@ -37,6 +37,7 @@ plugin.description =
 	-Battletoads in Battlemaniacs (SNES), 1-2p
 	-Battletoads-Double Dragon (NES), 1-2p
 	-Battletoads-Double Dragon (SNES), 1-2p, including if patched to use level select by default (see instructions)
+	-Battletoads (Arcade), 1p
 
 	MARIO BLOCK
 	-Mario Bros. (NES), 1-2p
@@ -134,6 +135,7 @@ plugin.description =
 	-Alundra (PSX), 1p, supports patched versions (e.g., Unworked Designs)
 	-Anticipation (NES), up to 4 players, shuffles on incorrect player answers, correct CPU answers, and running out of time.
 	-Arkanoid: Doh it Again (SNES), 1p
+	-Astro Boy - Omega Factor (USA) (GBA), 1p
 	-Banjo-Kazooie (N64), 1p
 	-Bao Qing Tian (Ch) (NES), 1p
 	-Batman (NES), 1p
@@ -153,6 +155,7 @@ plugin.description =
 	-Crash Bandicoot 4 (Bootleg) (NES), 1p
 	-Darkwing Duck (NES), 1p
 	-Demon's Crest (SNES), 1p
+	-Do-Re-Mi Fantasy - Milon no Dokidoki Daibouken (SNES), 1p
 	-Double Dragon 1 (NES), 1-2p, Mode A or B, shuffles on knockdown and death
 	-Double Dragon 2 (NES), 1-2p, shuffles on knockdown and death
 	-DuckTales (NES), 1p
@@ -181,8 +184,10 @@ plugin.description =
 	-Jackie Chan's Action Kung-Fu (NES), 1p
 	-James Bond Jr. (SNES), 1p
 	-Jaws (NES), 1p
+	-Jim Power - The Lost Dimension in 3D (SNES), 1p
 	-Journey to Silius (NES), 1p
 	-Jungle Book, The (NES, SNES, Genesis/Mega Drive), 1p
+	-Jurassic Park (SNES), 1p
 	-Kabuki Quantum Fighter (NES), 1p
 	-Kuru Kuru Kururin (GBA), 1p
 	-Last Alert (TG-16 CD), 1p
@@ -192,11 +197,14 @@ plugin.description =
 	-Lion King, The (SNES), 1p
 	-Lion King 2 (bootleg) (Genesis/Mega Drive), 1p
 	-Magical Kid's Doropie / Krion Conquest (NES), 1p
+	-Majuu Ou (Japan) / King of Demons (SNES), 1p
 	-Marble Madness (NES), 1-2p
 	-Mario Kart: Super Circuit (SNES), 1p, Grand Prix - shuffles on collisions with other karts (lost coins or have 0 coins), falls
 	-Mario Paint (SNES), joystick hack, Gnat Attack, 1p
+	-Math Blaster - Episode 1 (SNES), 1p
 	-Mega Q*Bert (Genesis/Mega Drive), 1p
 	-Mendel Palace (NES), 1p
+	-Metal Slug - Super Vehicle-001 (Arcade), 1p
 	-Metal Storm (NES), 1p
 	-Mighty Morphin Power Rangers - The Movie (SNES), 1p
 	-Minnesota Fats - Pool Legend (Saturn), 1p story mode
@@ -230,6 +238,7 @@ plugin.description =
 	-Rubble Saver II (GB), 1p
 	-Sanrio World Smash Ball! (SNES), 1-2p
 	-Saturday Night Slam Masters (SNES), 1p
+	-SD Gundam Sangokushi Rainbow Tairiku Senki (Japan) (Arcade), 1p
 	-Shaq-Fu (Genesis/Mega Drive), 1p
 	-Shatterhand (NES), 1p
 	-Shinobi III (Genesis/Mega Drive), 1p
@@ -262,6 +271,7 @@ plugin.description =
 	-The Magical Quest 3: Mickey to Donald - Magical Adventure 3 (SNES), 1-2p
 	-Tiny Toon Adventures (NES), 1p
 	-Titenic (bootleg) (NES), 1p
+	-Trip World (GB) and Trip World DX (GBC), 1p
 	-Tony Hawk's Pro Skater (PSX), 1p
 	-Tony Hawk's Pro Skater 2 (PSX), 1p
 	-Tony Hawk's Pro Skater 3 (PSX), 1p
@@ -270,6 +280,7 @@ plugin.description =
 	-U.N. Squadron (SNES), 1p
 	-Ultimate Mortal Kombat 3 (SNES), 1p (for now)
 	-Vice: Project Doom (NES), 1p
+	-Vs. Ice Climber, set IC4-4 B-1 (Arcade), 1p
 	-WarioWare, Inc.: Mega Microgame$! (GBA), 1p - bonus games including 2p are pending
 	-Wild Guns (SNES), 1p
 	-Wit's (NES), 1p
@@ -7639,6 +7650,140 @@ local gamedata = {
 		end,
 		maxlives=function() return 69 end,
 		ActiveP1=function() return true end,
+	},
+	['AstroBoyOmegaFactor_GBA']={ -- Astro Boy - Omega Factor, GBA (USA)
+		func=health_swap,
+		is_valid_gamestate=function() return true end,
+		get_health=function() return memory.read_u32_le(0x2802, "IWRAM") end,
+		other_swaps=function() return false end,
+	},
+	['JurassicPark1_SNES']={ -- Jurassic Park, SNES (USA)
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return 240 - memory.read_u8(0x0002EB, "WRAM") end, -- value stored appears to be damage, not health, so it needs to be inverted
+		p1getlc=function() return memory.read_u8(0x0002A3, "WRAM") end,
+		maxhp=function() return 240 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x0002A3 end,
+		LivesWhichRAM=function() return "WRAM" end,
+		maxlives=function() return 4 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+	},
+	['JimPower_SNES']={ -- Jim Power - The Lost Dimension in 3D, SNES (USA)
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return 0 end,
+		p1getlc=function() return memory.read_u8(0x00003F, "WRAM") end,
+		maxhp=function() return 0 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x00003F end,
+		LivesWhichRAM=function() return "WRAM" end,
+		maxlives=function() return 9 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+	},
+	['Battletoads_ARC']={ -- Battletoads, arcade
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_u8(0x0004AC, "tms34020 : ram : 0x0-0x3FFFFF") end,
+		p1getlc=function() return memory.read_u8(0x03410A, "tms34020 : ram : 0x0-0x3FFFFF") end, -- unlimited coins are given instead of lives to encourage player switching, lives at 0004C8
+		maxhp=function() return 161 end,
+		minhp=-1,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x03410A end,
+		LivesWhichRAM=function() return "tms34020 : ram : 0x0-0x3FFFFF" end,
+		maxlives=function() return 69 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+		grace=40,
+	},
+	['MajuuOu_SNES']={ -- Majuu Ou (Japan) / King of Demons
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_u8(0x00009F, "WRAM") end,
+		p1getlc=function() return memory.read_u8(0x0000A3, "WRAM") end,
+		maxhp=function() return 112 end,
+		gmode=function() return memory.read_u8(0x000209, "WRAM") == 0 end, -- might be not equal to 20?
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x0000A3 end,
+		LivesWhichRAM=function() return "WRAM" end,
+		maxlives=function() return 9 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+		other_swaps=function()
+		-- if the player has his wife (the fairy), she revives him on death, so she's expended instead of a life. goes from 0 when disabled to 19 when enabled
+		local wife_changed, wife_cur, wife_prev = update_prev('wife', memory.read_u8(0x0006A7, "WRAM"))
+		return (wife_changed and wife_cur == 0 and wife_prev == 19) end,
+	},	
+	['GundamRainbow_ARC']={ -- SD Gundam Sangokushi Rainbow Tairiku Senki (Japan), arcade
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return 0 end,
+		p1getlc=function() return memory.read_u8(0x000653, "m68000 : ram : 0x108000-0x11FFFF") end,
+		maxhp=function() return 0 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x000653 end,
+		LivesWhichRAM=function() return "m68000 : ram : 0x108000-0x11FFFF" end,
+		maxlives=function() return 2 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+	},
+	['MetalSlug1_ARC']={ -- Metal Slug - Super Vehicle-001, arcade (US)
+		func=singleplayer_withlives_swap,
+		-- 0xfdb6 and 0xfdb7 are P2 and P1 states: 0x00=Inactive, 0x01=Playing, 0x02=Continue, 0x03=Game Over
+		gmode=function() 
+			local p1state = memory.read_u8(0x00FDB7, "m68000 : ram : 0x100000-0x10FFFF")
+			local p2state = memory.read_u8(0x00FDB6, "m68000 : ram : 0x100000-0x10FFFF")
+			return (p1state > 0 and p1state <= 3) or (p2state > 0 and p2state <= 3)
+		end,
+		p1gethp=function() return memory.read_s8(0x0005E7, "m68000 : ram : 0x100000-0x10FFFF") end, -- slug health
+		p1getlc=function() return memory.read_u8(0x000377, "m68000 : ram : 0x100000-0x10FFFF") end,
+		maxhp=function() return 48 end,
+		minhp=-1;
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x000377 end,
+		LivesWhichRAM=function() return "m68000 : ram : 0x100000-0x10FFFF" end,
+		maxlives=function() return 71 end,
+		ActiveP1=function() return true end, -- p1 is always active (until p2 support added!)
+	},
+	['TripWorld_GB']={ -- Trip World, GB, and Trip World DX, GBC
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_u8(0x20, "HRAM") end,
+		p1getlc=function() return memory.read_u8(0x00E1, "WRAM") end,
+		maxhp=function() return 4 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x00E1 end,
+		LivesWhichRAM=function() return "WRAM" end,
+		maxlives=function() return 9 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+	},	
+	['VsIceClimber_ARC']={ -- Vs. Ice Climber, arcade (set IC4-4 B-1)
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return 1 end, 
+		p1getlc=function() return memory.read_u8(0x0020, "rp2a03 : ram : 0x0-0x7FF") end, -- if using coins instead of lives, use address 0797 at the same domain
+		maxhp=function() return 1 end, 
+		gmode=function() return memory.read_u8(0x0219, "rp2a03 : ram : 0x0-0x7FF") == 251 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x0020 end,
+		LivesWhichRAM=function() return "rp2a03 : ram : 0x0-0x7FF" end,
+		maxlives=function() return 8 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+	},
+	['MathBlaster_SNES']={ -- Math Blaster - Episode 1, SNES (USA)
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_s8(0x0009A4, "WRAM") end,
+		p1getlc=function() return memory.read_s8(0x0009A3, "WRAM") end,
+		maxhp=function() return 8 end,
+		minhp=-1,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x0009A3 end,
+		LivesWhichRAM=function() return "WRAM" end,
+		maxlives=function() return 9 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+	},
+	['DoReMiFantasy_SNES']={ -- Do-Re-Mi Fantasy - Milon no Dokidoki Daibouken, SNES (Japan)
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_u8(0x000E5B, "WRAM") end,
+		p1getlc=function() return memory.read_u8(0x0000F1, "WRAM") end,
+		maxhp=function() return 2 end,
+		minhp=-1,
+		gmode=function() return memory.read_u8(0x00000A, "WRAM") == 82 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x0000F1 end,
+		LivesWhichRAM=function() return "WRAM" end,
+		maxlives=function() return 9 end,
+		ActiveP1=function() return true end, -- p1 is always active!
 	},
 }
 

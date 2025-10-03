@@ -10,6 +10,7 @@ A14563325B0F33C358142E7363D31614722FDDB1 BTDD_NES                     -- Battlet
 3041C5C2A88449CF358A57D019930849575F8F6D BT_SNES                      -- Battletoads in Battlemaniacs SNES (US)
 BF56F12BDDE3E2233D7FFCAF4825B10D92632B77 BTDD_SNES                    -- Battletoads Double Dragon SNES (US)
 0248CF714380D11E38A4C242A001E97164D477F5 BTDD_SNES_patched            -- Battletoads Double Dragon SNES patched for level select
+922D9C397B3235388B7A68D66B35C8D7FC8FA275 Battletoads_ARC              -- Battletoads, arcade
 
 -- Castlevania Block
 A31B8BD5B370A9103343C866F3C2B2998E889341 CV1_NES                      -- Castlevania NES (US 1.0)
@@ -333,6 +334,7 @@ CC8CB9EEBAAE9C695BE7EE965E3C8D7CF82C6D18 AdvMagicKingdom_NES          -- Adventu
 A6FC42BD5D19E36E5D8A2D8C4F4E9D23         Aladdin_GEN                  -- Aladdin (Genesis) (US)
 BD5FEA18CE7456CC0231A39473927D8EA9C6589B Aladdin_SNES                 -- Aladdin (SNES) (US)
 6B08E8FA5C17AA3B435BF611AAE7DB0ABB0A878E ArkanoidDohItAgain_SNES      -- Arkanoid: Doh It Again (SNES)
+4D652C24979DD7A08EE683B32D1D8986A5511A87 AstroBoyOmegaFactor_GBA      -- Astro Boy - Omega Factor (USA) (En,Ja,Fr,De,Es,It)
 3AA21326050C489EA867DE05DD6CB7E5         BonksAdventure_TG16          -- Bonk's Adventure, TG-16 (U)
 0E40052299ADA46F6C2D1172323366F872F90570 BubbleBobble_NES             -- Bubble Bobble (US)
 752D6E1ED185F9DB49230F42319A573A44E32397 BubsyFFT_JAG                 -- Bubsy in: Fractured Furry Tales, Jaguar (World)
@@ -346,6 +348,8 @@ E708011B76EE757EB27D1B0626071A055DEACACB Castlevania2_GB              -- Castlev
 249FC147                                 CrashBandicoot1_PS1_USA      -- Crash Bandicoot (USA)
 149A203B                                 CrashBandicoot2_PS1_USA      -- Crash Bandicoot 2 - Cortex Strikes Back (USA)
 9BF37B2C                                 CrashBandicoot3_PS1_USA      -- Crash Bandicoot - Warped (USA)
+E56EBBCD0A2DB7BF58E2209ADB96F589F0100702 DoReMiFantasy_SNES           -- Do-Re-Mi Fantasy - Milon no Dokidoki Daibouken (Japan)
+345E32FDA9EE9DA42B96B50E9F3E89A506C5F03F DoReMiFantasy_SNES           -- Do-Re-Mi Fantasy - Milon no Dokidoki Daibouken (Gaijin translation)
 4E6D8F085CA197479D59912C1D58E4F3B40C28AC DonkeyKongLand_GB            -- Donkey Kong Land (USA, Europe)
 69C267201EB327D086164A15B8A57C4A43E107D8 DonkeyKongLand_GB            -- Donkey Kong Land (new colors mode v1.01)
 4B5720BC6E0590C9372CFBD0C418F8EFD4D0C96D DuckTales_NES                -- Duck Tales (US)
@@ -374,10 +378,12 @@ E927417E67F1FF3170CC027FF1E96726         IndianaJonesLC_GEN           -- Indiana
 7BD017A3                                 IQ_PS1_NA                    -- I.Q.: Intelligent Qube, PS1 (NTSC-U)
 48308AD01ED49B928E38EE7DE18FEB9F917A6C1E JackieChan_NES               -- Jackie Chan's Action Kung-Fu (US)
 52D1645037756D76A656EA358E88209AEFBD1BD6 Jaws_NES                     -- Jaws (US)
+45FBF4429B8B4A806AF31503A0CF968CFFBA3AF1 JimPower_SNES                -- Jim Power - The Lost Dimension in 3D, SNES (USA)
 275244538589393B552B159AB1D380090C8E8996 JourneyToSilius_NES          -- Journey to Silius (US)
 A2D12631F4FA1BD2FF6415004265C66CD40B4AF5 JungleBook_NES               -- Jungle Book (NES) (US)
 F9DBB76FB1A62D47F8DE4E7DB46BFBCB1A038CA5 JungleBook_SNES              -- Jungle Book (SNES) (US)
 2E1C1F784C9463152CD1A772F87677AF         JungleBook_GEN               -- Jungle Book (GEN) (US)
+DCF24B8BCBDA766FFAFDEBFD39AAD073C18176F3 JurassicPark1_SNES           -- Jurassic Park, SNES (USA)
 7B07791F9AEA7170A43F54390B45F2904F78FF0F KabukiQuantumFighter_NES     -- Kabuki Quantum Fighter (US)
 37A476567D133C146FEE6B5E2EB0B07A215DA6B0 KirbyNightmareDreamland_GBA  -- Kirby: Nightmare in Dreamland (US)
 274B102B6D940F46861A92B4E65F89A51815C12C KirbyMirror_GBA              -- Kirby & the Amazing Mirror (US)
@@ -391,10 +397,14 @@ E5319132495FD34D03F141962D9D6E3D76FE7B02 LionKing_SNES                -- The Lio
 D90D6CDCAA108738C7D41E1E9D79DA5C8DDC8853 MagicalQuestMickey2_SNES     -- Great Circus Mystery Starring Mickey & Minnie, The (USA)
 8A153F92AD2498FBF66E4CB100F6E5B950098044 MagicalQuestMickey3_SNES     -- Mickey to Donald - Magical Adventure 3 (Japan)
 FCD6E1290ACDAC44D77995FE25FF2AA657909802 MagicalQuestMickey3_SNES     -- Mickey to Donald - Magical Adventure 3 (Japan) [Magical Quest 3 - English v1.5.ips]
+54048324BF80BD36E372F58A68F1D3F2B5FFE498 MajuuOu_SNES                 -- Majuu Ou / King of Demons (Japan)
+2147C2B1FD24184E54E774F9AFB92059D40FFACB MajuuOu_SNES                 -- Majuu Ou / King of Demons (Aeon Genesis translation)
 DB009866ECF20CFDCE93DCA861F5BE1F9DFAAF2B MarbleMadness_NES            -- Marble Madness (US)
 9D327C030C3E2D9007990518594F70C3340AC56F MarioKartSuperCircuit_GBA    -- Mario Kart: Super Circuit (US)
+239AB10D88B3B60A631E9AE91339BB815840BD60 MathBlaster_SNES             -- Math Blaster - Episode 1, SNES (USA)
 95B5306D9860E5B6E438CE750565927B893DC78C MegaQBert_GEN                -- Mega Q*Bert (homebrew)
 646FC2337BDB2FCA8857ABAF6A41EC44F39BB83B MendelPalace_NES             -- Mendel Palace (US)
+53B7A42FB2A18C661BF2199D963D90710729217E MetalSlug1_ARC               -- Metal Slug - Super Vehicle-001 (US)
 F569F70DBBEE96A348E053A958120F64F05B7D04 MetalStorm_NES               -- Metal Storm (US)
 7FA231C5A64B9AF1B4E718B019975B21512A2E51 MetalStorm_NES               -- Metal Storm (US), 3 hit hack
 82FBE365BC96FE3F03C3EB12E1620910B15F01F9 PowerRangersMovie_SNES       -- Mighty Morphin Power Rangers - The Movie (USA)
@@ -435,6 +445,7 @@ ECF9D0BAC130FED7B6A54A67D7B27DF7         Ristar_GEN                   -- Ristar 
 F182EB75F21E46E516CBB6E6BEF0324724BC0F04 SanrioWorldSmashBall_SNES    -- Sanrio World Smash Ball (J)
 CD10C2542DF4579BE57D5033A980DBF6E2C1547E SanrioWorldSmashBall_SNES    -- Sanrio World Smash Ball (J T+Eng1.00 Suicidal)
 DF427B086F61AF56424A0A2FA912C82B2587BCB8 SatNightSlamMasters_SNES     -- Saturday Night Slam Masters (US)
+1FF1CCF826F983E25A2F35F59CF0AC55F3439F09 GundamRainbow_ARC            -- SD Gundam Sangokushi Rainbow Tairiku Senki (Japan)
 72B5848612F80D14BC51807F8C7E239E         ShaqFu_GEN                   -- Shaq-Fu (US)
 611131DDB450C9B46AD6BC53E0C6E26C7140E83E Shatterhand_NES              -- Shatterhand (US)
 0BB5E529B9860DE624F5101F1FE4964568F1F0BD Shatterhand_NES              -- Shatterhand (US) Arcade Pit Edition
@@ -466,9 +477,13 @@ AD10DA5491A0753158ADFB30317CBB5E0A916B01 TinyToonAdventures_NES       -- Tiny To
 83B13EE9                                 THPS2_PS1                    -- Tony Hawk's Pro Skater 2 (NTSC-U)
 3544F251                                 THPS3_PS1                    -- Tony Hawk's Pro Skater 3 (NTSC-U)
 A9743304                                 THPS4_PS1                    -- Tony Hawk's Pro Skater 4 (NTSC-U)
+ADC10A23DD33D40740F5C8C086DFCB97B8389286 TripWorld_GB                 -- Trip World, GB (Europe)
+AC19D49906E72AAEBEFFA9AB7106EB346A5EFA07 TripWorld_GB                 -- Trip World, GB (Japan)
+2B4B97A1F29D7A5BD433D802C9D20641B16E1F27 TripWorld_GB                 -- Trip World DX, GBC
 D1F36EE7                                 TwistedMetal2_PSX            -- Twisted Metal 2: World Tour (US)
 09C094CA1114BCB6D5917E989686CA79B96CF9EA UltimateMortalKombat3_SNES   -- Ultimate Mortal Kombat 3 (USA)
 3E8F1E05F3B0BD08FC1D62FF0EFE81D533B9AF8C ViceProjectDoom_NES          -- Vice: Project Doom (US, patched)
+E4BDA579BA8A08608545F610701A75B6D6D4AC20 VsIceClimber_ARC             -- Vs. Ice Climber, arcade (set IC4-4 B-1)
 1ECF28D5F3D2E84E3CC58ED621CB0FC0DD9D70D0 WildGuns_SNES                -- Wild Guns (US)
 80A68B09778F80618552E90458B64515A01F6BB7 Wits_NES                     -- Wit's (Japan)
 BC1BDFBBF96B0D147066DF5448C2D8819875F1B7 Wits_NES                     -- Wit's (Nalwonk's mod for 3 rounds)

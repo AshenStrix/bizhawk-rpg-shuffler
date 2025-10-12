@@ -6020,13 +6020,19 @@ local gamedata = {
 	},
 	['RubbleSaverII_GB']={ -- Rubble Saver II, GB
 		func=singleplayer_withlives_swap,
-		p1gethp=function() return memory.read_u8(0x00b7, "WRAM")+ memory.read_u8(0x00b8, "WRAM") end,
+		p1gethp=function() return memory.read_u8(0x00b7, "WRAM") end, -- health
 		p1getlc=function() return memory.read_u8(0x00b6, "WRAM") end,
-		maxhp=function() return 12 end,
+		maxhp=function() return 3 end,
+		other_swaps=function()
+			-- swap if rocket used to get out of a pit 
+			local rockets_changed, rockets_curr, rockets_prev = update_prev("rockets", memory.read_u8(0x00b8, "WRAM"))
+			if rockets_changed and rockets_curr < rockets_prev then return true end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "WRAM" end,
 		p1livesaddr=function() return 0x00b6 end,
-		maxlives=function() return 69 end,
+		maxlives=function() return 9 end,
 		ActiveP1=function() return true end, -- p1 is always active!
 	},
 	['ShinobiIII_GEN']={ -- Shinobi III, Genesis

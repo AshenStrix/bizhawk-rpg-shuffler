@@ -3279,7 +3279,7 @@ local gamedata = {
 		end,
 		gettogglecheck=function() return memory.read_u8(0x0054, "WRAM") end,
 		-- if gamestate is being changed, sometimes health drops to 0, so don't swap on that frame
-		grace=90, -- give 1.5 seconds for reorienting on returning from a swap
+		grace=120, -- give 2 seconds for reorienting on returning from a swap, let's not go higher than this
 
 		--FUTURE POSSIBLE REVISION
 		--func=fzero_snes_swap,
@@ -5945,7 +5945,7 @@ local gamedata = {
 		maxlives=function() return 5 end,
 		ActiveP1=function() return memory.read_u8(0x006a, "WRAM") > 0 end,
 		ActiveP2=function() return memory.read_u8(0x006b, "WRAM") > 0 end,
-		grace=40,
+		grace=60,
 	},
 	['PockyRocky2_SNES']={ -- Pocky & Rocky 2, SNES
 		func=twoplayers_withlives_swap,
@@ -6773,6 +6773,7 @@ local gamedata = {
 		p1livesaddr=function() return 0x0362 end,
 		maxlives=function() return 5 end,
 		ActiveP1=function() return true end, -- p1 is always active!
+		grace=40,
 	},
 	['MarbleMadness_NES']={ -- Marble Madness, NES
 		func=iframe_health_swap,
@@ -7372,7 +7373,7 @@ local gamedata = {
 		p1livesaddr=function() return 0xEA07 end, -- continues
 		maxlives=function() return 9 end, -- continues
 		ActiveP1=function() return true end, -- p1 is always active!
-		grace=40,
+		grace=60,
 	},
 	['NinjaWarriorsAgain_SNES']={ -- Ninjawarriors, SNES (USA)
 		func=health_swap,

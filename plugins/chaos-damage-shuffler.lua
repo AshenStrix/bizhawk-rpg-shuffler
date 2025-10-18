@@ -1756,7 +1756,7 @@ local function Pebble_Beach_Golf_Links_swap(gamemeta)
 		if (player1StrokesChanged) then
 			--console.log("P1 Strokes on hole "..hole.." has changed from "..prevPlayer1Strokes.." to "..player1Strokes);
 		end
-		if (player1StrokesChanged and player1Strokes == (prevPlayer1Strokes + 1)) then
+		if (player1StrokesChanged and (player1Strokes == (prevPlayer1Strokes + 1) or player1Strokes == (prevPlayer1Strokes + 2))) then
 			data.delayCountdown = gamemeta.delay;
 		end
 	end

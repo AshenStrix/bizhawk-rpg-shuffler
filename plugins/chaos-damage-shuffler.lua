@@ -6959,13 +6959,16 @@ local gamedata = {
 		ActiveP2=function() return memory.read_u8(0x00BD, "WRAM") & 2 ~= 0 end,
 	},
 	['SatNightSlamMasters_SNES']={ -- Saturday Night Slam Masters, SNES - 1p (for now)
-		func=iframe_health_swap,
+		func=health_swap,
 		get_health=function() return mainmemory.read_u8(0x879) end,
-		get_iframes=function() return mainmemory.read_u8(0x8BB) end,
 		is_valid_gamestate=function() return true end,
-			-- if health_swap is needed instead: 0xA89 : p1 grappled timer
+		suspend_updates=function() 
+			-- 0xA89 : p1 grappled timer, 0xB5B : p1 grappled/squeezed flag
 			-- if p1 is grappled, don't swap until the grapple is broken or the player loses
-			-- suspend_updates=function() return mainmemory.read_u8(0xA89) > 0 end,
+			-- leave options for this function in case tweaks needed (note: non-submission holds/combos don't trigger the flag or timer)
+			local in_hold_changed, in_hold_curr, in_hold_prev = update_prev("in_hold", mainmemory.read_u8(0xB5B))
+			return in_hold_curr == 1
+		end,
 		other_swaps=function()
 			local singles_winner_changed, singles_winner_curr = update_prev("singles_winner", mainmemory.read_u8(0x1C8D))
 			-- 0 if double countout, 1 if 1p, 2 if 2p
@@ -6987,6 +6990,8 @@ local gamedata = {
 			end
 			return false
 		end,
+		grace=80,
+		delay=7,
 	},
 	['WildGuns_SNES']={ -- Wild Guns, SNES
 		func=singleplayer_withlives_swap,

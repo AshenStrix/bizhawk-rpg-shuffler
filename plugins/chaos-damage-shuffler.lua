@@ -3164,22 +3164,22 @@ local gamedata = {
 			local _, baby_safe_curr, baby_safe_prev = update_prev("baby_safe", baby_status == 0x2000 or baby_status == 0x8000 or incutscene_curr == true)
 			-- 0x0000 freefloating, 0x2000 super star, 0x4000 held by bandit/frog/etc, 0x8000 on yoshi's back
 			-- if detached due to cutscene, such as goal ring, do not shuffle
-			local inpiranha_status = memory.read_u8(0x00AC, "CARTRAM") 
-			local _, inpiranha_curr, inpiranha_prev = update_prev("inpiranha", inpiranha_status == 0x001A)
+			local inpiranha_changed, inpiranha_curr, inpiranha_prev = update_prev("inpiranha", memory.read_u8(0x00AC, "CARTRAM"))
 			-- CARTRAM 0x00AC: 0x001A, or inpiranha here, actually corresponds to
 			-- "Dying in pit / inside piranha plant / receiving boss key / shrinking during Prince Froggy"
 			-- (thanks SMW Central)
 			-- SO, if this address turns to 0x001A, shuffle. If it ALREADY is 0x001A, don't shuffle on baby detach!
-			if inpiranha_curr and not inpiranha_prev and not incutscene_curr then
+			-- Prince Froggy deals cutscene damage 
+			-- note: this is funny but not fun to shuffle on, so we make an exception for exiting a different "in-cutscene" status (address == 0x02) straight into "piranha'd"
+			-- because in practice, you otherwise will never go straight from "in a cutscene" to "in a piranha plant" on the next frame
+			if inpiranha_changed and inpiranha_curr == 0x1A and (inpiranha_prev ~= 0x1A and inpiranha_prev ~= 0x02) and not incutscene_curr then
 				return true
 			end
-			if not baby_safe_curr and baby_safe_prev and not inpiranha_curr then
+			if not baby_safe_curr and baby_safe_prev and not (inpiranha_curr == 0x1A) then
 				return true
 			end
 			-- Dying in pit properly shuffles due to lives tracking
 			-- Key get properly does NOT shuffle due to incutscene_curr == true
-			-- Prince Froggy deals cutscene damage
-			-- - note: this is funny
 			local squished_changed, squished_curr, squished_prev = update_prev("squished", memory.read_u8(0x00AC, "CARTRAM") == 0x12)
 			-- 0x12 when Yoshi has been crushed by a wall, which doesn't trigger iframes
 			if squished_changed and squished_curr then

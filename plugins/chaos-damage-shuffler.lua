@@ -6846,7 +6846,8 @@ local gamedata = {
 		p1livesaddr=function() return 0x0362 end,
 		maxlives=function() return 5 end,
 		ActiveP1=function() return true end, -- p1 is always active!
-		grace=40,
+		grace=60,
+		-- notes: 0x0180: iframes address; 60 iframes for sidescroller, 128 for car, NONE for shootouts
 	},
 	['MarbleMadness_NES']={ -- Marble Madness, NES
 		func=iframe_health_swap,

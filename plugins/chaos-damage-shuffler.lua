@@ -6838,7 +6838,16 @@ local gamedata = {
 	}, 
 	['ViceProjectDoom_NES']={ -- Vice: Project Doom, NES
 		func=singleplayer_withlives_swap,
-		p1gethp=function() return memory.read_u8(0x0280, "RAM") end,
+		p1gethp=function() 
+			-- rail shooter levels: losing HP happens so quickly as to be unreactable
+			-- disable HP swaps in these two levels by pretending you are at max hp
+			if memory.read_u8(0x0085, "RAM") == 45 or memory.read_u8(0x0085, "RAM") == 46 -- in one of the two rail shooter levels
+			then
+				return 20
+			else 
+				return memory.read_u8(0x0280, "RAM") 
+			end
+		end,
 		p1getlc=function() return memory.read_s8(0x0362, "RAM") end,
 		maxhp=function() return 20 end,
 		CanHaveInfiniteLives=true,

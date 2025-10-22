@@ -5079,7 +5079,10 @@ local gamedata = {
 			local diedfromdamage_changed, diedfromdamage_curr, diedfromdamage_prev = update_prev("diedfromdamage", memory.read_u8(0x0D15, "WRAM") == 216)
 			-- this appears to be the Mario dying sprite, which triggers when you die from damage
 			-- triggering a fadeout and return to checkpoint
-			if diedfromdamage_changed and diedfromdamage_curr == true and not (memory.read_u8(0x000527, "WRAM") == 1) then
+			local level_timer_changed = update_prev("level_timer", memory.read_u8(0x002A, "WRAM"))
+			-- have to actively be in gameplay, which means that this timer should be ticking up 1 by every frame
+			-- adding this condition will prevent cutscene shuffling, like at the ending
+			if diedfromdamage_changed and diedfromdamage_curr == true and not (memory.read_u8(0x000527, "WRAM") == 1) and level_timer_changed then
 				-- 1 == on map
 				return true
 			end

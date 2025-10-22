@@ -1,6 +1,6 @@
 # Bizhawk Shuffler 2
 * written by authorblues, inspired by [Brossentia's Bizhawk Shuffler](https://github.com/brossentia/BizHawk-Shuffler), based on slowbeef's original project
-* [tested on Bizhawk v2.6.3-v2.10](https://github.com/TASVideos/BizHawk/releases/)  
+* [tested on Bizhawk v2.9.1-v2.10](https://github.com/TASVideos/BizHawk/releases/)
 * [click here to download the latest version](https://github.com/Phiggle/bizhawk-shuffler-2/archive/refs/heads/main.zip) - I do my best to keep up with the [main shuffler repo](https://github.com/authorblues/bizhawk-shuffler-2) but you may want to double-check.
 * Direct Chaos Shuffler links for those who already know what they are doing: [hash database](https://github.com/Phiggle/bizhawk-shuffler-2/blob/main/plugins/chaos-shuffler-hashes.dat), [plugin](https://github.com/Phiggle/bizhawk-shuffler-2/blob/main/plugins/chaos-damage-shuffler.lua) (click on the plugin for instructions and a list of supported games!)
 

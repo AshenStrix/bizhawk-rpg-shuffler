@@ -2,7 +2,7 @@ local plugin = {}
 
 plugin.name = "Chaos Damage Shuffler"
 plugin.author = "authorblues and kalimag (MMDS), Phiggle, Rogue_Millipede, Shadow Hog, expeditedDelivery, Smight, endrift, ZoSym, Extreme0, L Thammy"
-plugin.minversion = "2.6.3"
+plugin.minversion = "2.9.1"
 plugin.settings =
 {
 	{ name='InfiniteLives', type='boolean', label='Infinite* Lives (see notes)' },

@@ -7189,7 +7189,13 @@ local gamedata = {
 		p1livesaddr=function() return 0x164770 end,
 		maxlives=function() return 2 end,
 		ActiveP1=function() return true end,
-		gmode=function() return memory.read_u8(0x1FEF4C, "MainRAM") == 0 end,
+		swap_exceptions=function() 
+			-- goal: create a damage threshold, so that only changes of >3 HP trigger HP swaps
+			local hp_changed, hp_curr, hp_prev = update_prev("hp", memory.read_u8(0x187D00, "MainRAM"))
+			if hp_changed and hp_curr + 3 >= hp_prev and hp_curr < hp_prev then return true end
+			return false
+		end,
+		-- notes for potential future other_swaps: "on fire" flag at 0x187BC6 and 0x1FEF4C, 1 == on fire
 		grace=60,
 	},
 	['JamesBondJr_SNES']={ -- James Bond Jr., SNES

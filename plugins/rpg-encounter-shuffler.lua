@@ -8,8 +8,9 @@ plugin.settings =
 	{ name='SuppressLog', type='boolean', label='Suppress "ROM unrecognized"/"on Level 1" logs'},
 	{ name='DebugSingleGame', type='boolean', label='Debugging: Rearm the shuffler logic even if no new game was loaded' },
 	{ name='grace', type='number', label="Minimum grace period before swapping (won't go < 10 frames)", default=10 },
-	{ name='SwapChance', type='number', label="Percent chance, increasing linearly, of an encounter triggering a swap", default=100},
+	{ name='BaseSwapChance', type='number', label="Percent chance, increasing linearly, of an encounter triggering a swap", default=100},
 	{ name='SwapChanceIncrease', type='boolean', label="Increase chance with every suppressed swap", default=true},
+	{ name='SwapChanceIncreaseAmount', type='number', label="Percent to increment swap chance with each encounter", default=5},
 }
 
 plugin.description =
@@ -38,9 +39,9 @@ local swap_chance
 --returns true if the die roll determines we should still swap if the swap requirements are met, then increases the chance if it fails
 --if it succeeds, resets the swap chance
 local function checkRandomSwap(settings)
-	if settings.SwapChance ~= 100 and swap_chance < 100 then
+	if settings.BaseSwapChance ~= 100 and swap_chance < 100 then
 		if math.random(100) >= swap_chance then 
-			swap_chance = settings.SwapChanceIncrease and (swap_chance + settings.SwapChance) or swap_chance
+			swap_chance = settings.SwapChanceIncrease and (swap_chance + settings.SwapChanceIncreaseAmount) or swap_chance
 			log_console('Current Swap Chance: ' .. swap_chance)
 			return false
 			-- don't swap
@@ -77,7 +78,7 @@ local gamedata = {
 	},
 	['FF4_SNES']={ -- Final Fantasy 4 SNES
 		func=encounter_swap,
-		inEncounter=function() return memory.read_u16_le(0x000684, "WRAM") == 0x0100 end, --0100
+		inEncounter=function() return memory.read_u16_le(0x000684, "WRAM") == 0x0100 end, --TODO: Look for logic that swaps when battle starts (after zoom-in, ideally during black screen)
 		--logfunc=function() log_console('ff4 memory: ' .. memory.read_u16_le(0x000684, "WRAM")) end,
 	}
 }
@@ -127,7 +128,7 @@ function plugin.on_game_load(data, settings)
 		gamemeta = gamedata[tag]
 		local func = gamemeta.func
 		shouldSwap = func(gamemeta)
-		swap_chance = settings.SwapChance
+		swap_chance = settings.BaseSwapChance
 		math.randomseed(os.time())
 	else
 		gamemeta = nil

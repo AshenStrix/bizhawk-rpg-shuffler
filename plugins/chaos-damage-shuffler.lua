@@ -6840,26 +6840,24 @@ local gamedata = {
 		grace=30,
 	}, 
 	['ViceProjectDoom_NES']={ -- Vice: Project Doom, NES
-		func=singleplayer_withlives_swap,
-		p1gethp=function() 
-			-- rail shooter levels: losing HP happens so quickly as to be unreactable
-			-- disable HP swaps in these two levels by pretending you are at max hp
-			if memory.read_u8(0x0085, "RAM") == 45 or memory.read_u8(0x0085, "RAM") == 46 -- in one of the two rail shooter levels
-			then
-				return 20
-			else 
-				return memory.read_u8(0x0280, "RAM") 
-			end
+		func=iframe_health_swap,
+		-- we will handle deaths by tracking lives for this game, so don't shuffle if health is at 0 - wait for lives
+		is_valid_gamestate=function() return memory.read_s8(0x0280, "RAM") > 0 end,
+		-- 0x0180: iframes address; 60 iframes for sidescroller, 128 for car, NONE for shootouts
+		get_iframes=function() return memory.read_u8(0x0180, "RAM") end,
+		iframe_minimum=function() return 1 end,
+		get_health=function() return memory.read_s8(0x0280, "RAM") end,
+		other_swaps=function()
+			-- need to track lives lost from deaths not due to 0 HP
+			local lives_changed, lives_curr, lives_prev = update_prev("lives", memory.read_s8(0x0362, "RAM"))
+			if lives_changed and lives_curr < lives_prev and lives_prev >= 0 then return true end
+			return false
 		end,
-		p1getlc=function() return memory.read_s8(0x0362, "RAM") end,
-		maxhp=function() return 20 end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x0362 end,
 		maxlives=function() return 5 end,
 		ActiveP1=function() return true end, -- p1 is always active!
-		grace=60,
-		-- notes: 0x0180: iframes address; 60 iframes for sidescroller, 128 for car, NONE for shootouts
 	},
 	['MarbleMadness_NES']={ -- Marble Madness, NES
 		func=iframe_health_swap,

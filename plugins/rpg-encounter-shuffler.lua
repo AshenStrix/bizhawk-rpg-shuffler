@@ -8,6 +8,8 @@ plugin.settings =
 	{ name='SuppressLog', type='boolean', label='Suppress "ROM unrecognized"/"on Level 1" logs'},
 	{ name='DebugSingleGame', type='boolean', label='Debugging: Rearm the shuffler logic even if no new game was loaded' },
 	{ name='grace', type='number', label="Minimum grace period before swapping (won't go < 10 frames)", default=10 },
+	{ name='SwapChance', type='number', label="Percent chance, increasing linearly, of an encounter triggering a swap", default=100},
+	{ name='SwapChanceIncrease', type='boolean', label="Increase chance with every suppressed swap", default=true},
 }
 
 plugin.description =
@@ -31,6 +33,22 @@ local debug_timer
 local swap_scheduled
 local shouldSwap
 local prev_framecount
+local swap_chance
+
+--returns true if the die roll determines we should still swap if the swap requirements are met, then increases the chance if it fails
+--if it succeeds, resets the swap chance
+local function checkRandomSwap(settings)
+	if settings.SwapChance ~= 100 and swap_chance < 100 then
+		if math.random(100) >= swap_chance then 
+			swap_chance = settings.SwapChanceIncrease and (swap_chance + settings.SwapChance) or swap_chance
+			log_console('Current Swap Chance: ' .. swap_chance)
+			return false
+			-- don't swap
+		end
+	end
+	swap_chance = settings.SwapChance
+	return true
+end
 
 -- update value in prevdata and return whether the value has changed, new value, and old value
 -- value is only considered changed if it wasn't nil before
@@ -48,23 +66,6 @@ local function encounter_swap(gamemeta)
 	return function()
 		local encounterChanged, curInEncounter = update_prev('encounterStatus', gamemeta.inEncounter())
 		return encounterChanged and curInEncounter
-	end
-end
-		
-
-local function ff6_swap(gamemeta)
-	return function()
-		local encounterChanged, curInEncounter = update_prev('encounterStatus', gamemeta.inEncounter())
-		--gamemeta.logfunc()
-		return encounterChanged and (curInEncounter == 0xFF00)
-	end
-end
-
-local function ff4_swap(gamemeta)
-	return function()
-		local encounterChanged, curInEncounter = update_prev('encounterStatus', gamemeta.inEncounter())
-		--gamemeta.logfunc()
-		return encounterChanged and (curInEncounter == 0x0100)
 	end
 end
 
@@ -126,6 +127,8 @@ function plugin.on_game_load(data, settings)
 		gamemeta = gamedata[tag]
 		local func = gamemeta.func
 		shouldSwap = func(gamemeta)
+		swap_chance = settings.SwapChance
+		math.randomseed(os.time())
 	else
 		gamemeta = nil
 	end
@@ -175,7 +178,7 @@ function plugin.on_frame(data, settings)
 
 		-- AND NOW WE SWAP
 		local schedule_swap, delay = shouldSwap(prevdata)
-		if schedule_swap and frames_since_restart > grace then
+		if schedule_swap and frames_since_restart > grace and checkRandomSwap(settings) then
 			delay = delay or 3
 			debug_timer = -delay
 			swap_game_delay(delay)

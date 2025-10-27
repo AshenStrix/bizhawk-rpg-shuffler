@@ -2385,6 +2385,101 @@ local function TecmoSuperBowl_NES_swap(gamemeta)
     end
 end
 
+local function PockyRocky2_SNES_swap(gamemeta)
+	return function(data)
+		-- Pocky can be in one of three armor states
+		local pocky_states = {
+			[0x1815] = 1,
+			[0x0015] = 2, -- kimono; you revive in this state
+			[0x6D29] = 3, -- kimono + armor item
+			}
+		-- If Pocky is not in a valid state, such as on loading screens, don't swap
+		-- If timer is at 0, hold off on swaps until timer refills; this prevents double swaps (health gets drained, then life)
+		-- this is pretty much our gmode or is_valid_gamestate
+		if pocky_states[gamemeta.getpockystate()] == nil or gamemeta.gettimeup() == 0 then
+			return false
+		end
+		-- the two players work VERY DIFFERENTLY from one another in this game
+		-- P1, Pocky, is always a human player
+		-- Damage type 1: drop in armor status
+		-- Damage type 2: losing the bunny ears, which provide 1 extra HP
+		-- Damage type 3: life lost
+		local pockycurrhp   = pocky_states[gamemeta.getpockystate()]
+		local pockycurrlc   = gamemeta.getlc()
+		-- P2 can be Rocky or lots of other characters, and a human P2 can tag in/out between levels
+		-- If P2 is human, track their HP (what SHOULD be a simple value from 0 to 4, but will be worse than that)
+		local p2currhuman   = gamemeta.getp2ishuman()
+		local p2currhp      = gamemeta.getp2hp()
+		-- we need to track whether the two characters have "merged" using magic or are currently "merging/unmerging"
+		-- as changes in HP during these situations should be processed but should not swap
+		local currmerged    = gamemeta.getmerged()
+		local currmerging   = gamemeta.getmerging()
+
+		-- retrieve previous hp/lives/merging data before backup
+		local pockyprevhp   = data.pockyprevhp
+		local pockyprevlc   = data.pockyprevlc
+		local p2prevhuman   = data.p2prevhuman
+		local p2prevhp      = data.p2prevhp
+		local prevmerged    = data.prevmerged
+		local prevmerging   = data.prevmerging
+
+		data.pockyprevhp    = pockycurrhp
+		data.pockyprevlc    = pockycurrlc
+		data.p2prevhuman    = p2currhuman
+		data.p2prevhp       = p2currhp
+		data.prevmerged     = currmerged
+		data.prevmerging    = currmerging
+
+		-- this delay ensures that when the game ticks away health for the end of a level,
+		-- we can catch its purpose and hopefully not swap, since this isnt damage related
+		if data.p1hpcountdown ~= nil and data.p1hpcountdown > 0 then
+			data.p1hpcountdown = data.p1hpcountdown - 1
+			if data.p1hpcountdown == 0 then
+				return true
+			end
+		end
+
+		if data.p2hpcountdown ~= nil and data.p2hpcountdown > 0 then
+			data.p2hpcountdown = data.p2hpcountdown - 1
+			if data.p2hpcountdown == 0 then
+				return true
+			end
+		end
+
+		-- if the health goes to 0, we will rely on the life count to tell us whether to swap
+		if pockyprevhp ~= nil and pockycurrhp < pockyprevhp then
+			data.p1hpcountdown = gamemeta.delay or 3
+		end
+		-- Situations where we want to cue up a swap for P2's HP dropping:
+			-- They're walking around unmerged AND player-controlled
+			-- They're being controlled by P1 because they're in a merged state
+		-- conversely, we want process P2's HP and NOT swap: 
+			-- if they are merging/unmerging (there are false HP drops here!)
+			-- this applies on the last frame of merges and unmerges as well
+		if (currmerged or p2currhuman) and currmerging == 0 and prevmerging == 0 then
+			if p2prevhp ~= nil and p2currhp < p2prevhp then
+				data.p2hpcountdown = gamemeta.delay or 3
+			end
+		end
+
+		-- check to see if the life count went down
+		-- only Pocky has lives; P2 respawns as often as you want, after a delay
+		if pockyprevlc ~= nil and pockycurrlc < pockyprevlc then
+			return true
+		end
+
+		-- finally, you should swap on losing the ears
+		-- for some reason, the ears value drops to 0 during the unmerging process, and it pops right back to normal when this is complete
+		-- therefore, swap on losing ears ONLY if you're not in a merge/unmerge!
+		local ears_changed, ears_curr = update_prev("ears", gamemeta.getears())
+		if ears_changed == true and ears_curr == false and currmerged == false then
+			data.p1hpcountdown = gamemeta.delay or 3
+		end
+
+		return false
+	end
+end
+
 local function always_swap(gamemeta)
 	return function(data)
 		return true -- Always swap!
@@ -6023,55 +6118,22 @@ local gamedata = {
 		ActiveP2=function() return memory.read_u8(0x006b, "WRAM") > 0 end,
 		grace=60,
 	},
-	['PockyRocky2_SNES']={ -- Pocky & Rocky 2, SNES
-		func=twoplayers_withlives_swap,
-		-- the two players work VERY DIFFERENTLY from one another in this game
-		-- p1 appears to have their health stored at 0x19CE in an insane way (between 2 and 12, or 0x02 and 0x0C) and at 2B88 (three states: base, kimono, armor)
-		gmode=function() 
-			-- only track health if pocky's health is valid 
-			return memory.read_u16_le(0x2B88, "WRAM") == 0x1815  
-			or memory.read_u16_le(0x2B88, "WRAM") == 0x0015  
-			or memory.read_u16_le(0x2B88, "WRAM") == 0x6D29  
-		end,
-		p1gethp=function()
-			local pocky_states = {
-				[0x1815] = 1,
-				[0x0015] = 2, -- kimono
-				[0x6D29] = 3, -- kimono + armor item
-			}
-			-- also track bunny ears, 0 if not present and 254 if there
-			if memory.read_u8(0x1901, "WRAM") == 254
-			then 
-				return pocky_states[memory.read_u16_le(0x2B88, "WRAM")] + 1
-			else 
-				return pocky_states[memory.read_u16_le(0x2B88, "WRAM")] or 0
-			end
-		end,
-		p1getlc=function() return memory.read_u8(0x19F4, "WRAM") end, -- at least lives work normally here!
-		p2gethp=function() 
-			if memory.read_u8(0x18CE, "WRAM") == 1 -- 2p is human-controlled
-				or (memory.read_u8(0x19CE, "WRAM") > 0x80) -- p1 and p2 have merged
-			then return memory.read_u8(0x05EA, "WRAM")
-			else
-				return 4 -- if 2p is separate/CPU, don't track them, and act like they have max HP
-			end
-		end,
-		p2getlc=function() return 0 end, -- the second player respawns after a cooldown
-		maxhp=function() return 5 end,
-		minhp=-1, -- we do want to shuffle on 0, because 2p does not use lives
-		swap_exceptions=function()
-			-- if on merging/unmerging frame, don't swap, so we can start tracking p2's hp
-			local merged_changed = update_prev("merged", memory.read_u8(0x19CE, "WRAM") >= 0x80)
-			local lives_changed, lives_curr, lives_prev = update_prev("lives", memory.read_u8(0x19F4, "WRAM"))
-			if merged_changed and not lives_changed then return true end
-			return false
-		end,
+ 	['PockyRocky2_SNES']={ -- Pocky & Rocky 2, SNES
+		func=PockyRocky2_SNES_swap,
+		getpockystate=function() return memory.read_u16_le(0x2B88, "WRAM") end,
+		gettimeup=function() return (memory.read_u16_le(0x05B4, "WRAM") == 0) end,
+		getears=function() return memory.read_u8(0x1901, "WRAM") == 254 end,
+		getlc=function() return memory.read_u8(0x19F4, "WRAM") end,
+		getp2ishuman=function() return memory.read_u8(0x18CE, "WRAM") == 1 end,
+		getp2hp=function() return memory.read_u8(0x05EA, "WRAM") end,
+		getmerged=function() return memory.read_u8(0x19CE, "WRAM") >= 0x80 end,
+		getmerging=function() return memory.read_u8(0x04B2, "WRAM") end,
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function() return 0x19F4 end,
 		LivesWhichRAM=function() return "WRAM" end,
 		maxlives=function() return 4 end,
 		ActiveP1=function() return true end, -- p1 is always active! p2 doesn't need lives so don't specify anything for them!
-		grace=40,
+		grace=50,
 	},
 	['RainbowIslands_NES']={ -- Rainbow Islands - The Story of Bubble Bobble 2, NES
 		func=singleplayer_withlives_swap,

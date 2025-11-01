@@ -7257,6 +7257,7 @@ local gamedata = {
 		end,
 		-- notes for potential future other_swaps: "on fire" flag at 0x187BC6 and 0x1FEF4C, 1 == on fire
 		grace=60,
+		delay=7,
 	},
 	['JamesBondJr_SNES']={ -- James Bond Jr., SNES
 		func=twoplayers_withlives_swap, 

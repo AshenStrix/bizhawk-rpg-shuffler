@@ -7163,9 +7163,19 @@ local gamedata = {
 	},
 	['Jaws_NES']={ -- Jaws, NES
 		func=singleplayer_withlives_swap,
-		p1gethp=function() return memory.read_u8(0x038a, "RAM")+ memory.read_u8(0x0393, "RAM") end,
+		p1gethp=function() return memory.read_u8(0x038a, "RAM") end, -- submarine
 		p1getlc=function() return memory.read_u8(0x0387, "RAM") end,
-		maxhp=function() return 4 end,
+		maxhp=function() return 1 end,
+		minhp=-1,
+		other_swaps=function()
+			-- goal: shuffle if you fail to defeat Jaws in the final battle
+			-- 0x0393 is the strobe counter, in case shuffling individual whiffs becomes possible
+			-- The strobe fight transitions either to the ending or, if you fail, sailing in regular gameplay
+			-- If you go from strobe fight to normal gameplay, swap
+			local scene_changed, scene_curr, scene_prev = update_prev("scene", memory.read_u8(0x046F, "RAM"))
+			if scene_changed and scene_curr == 1 and scene_prev == 4 then return true end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x0387 end,

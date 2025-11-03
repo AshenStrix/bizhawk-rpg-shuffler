@@ -8125,6 +8125,30 @@ function plugin.on_game_load(data, settings)
 			end 
 		end
 	end
+	
+	-- Teenage Mutant Ninja Turtles (NES)
+	-- goal: if you lose an ally, detect that and resurrect them on swapping in
+	if tag == "TMNT_NES" then
+		local TMNT_NES_ReviveAllies = true -- turn this to false if you don't want this upgrade to Infinite Lives
+		if settings.InfiniteLives == true -- is Infinite Lives enabled?
+			and TMNT_NES_ReviveAllies == true
+		then
+		-- if ally has 0 health, they died; set their hp to max to revive them
+			if memory.read_u8(0x0077, "RAM") == 0 -- Leo
+			then memory.write_u8(0x0077, 128, "RAM")
+			end 
+			if memory.read_u8(0x0078, "RAM") == 0 -- Raph
+			then memory.write_u8(0x0078, 128, "RAM")
+			end 
+			if memory.read_u8(0x0079, "RAM") == 0 -- Mike
+			then memory.write_u8(0x0079, 128, "RAM")
+			end 
+			if memory.read_u8(0x007A, "RAM") == 0 -- Don
+			then memory.write_u8(0x007A, 128, "RAM")
+			end 
+		end
+	end
+	
 
 	-- first time through with a bad match, tag will be nil
 	-- can use this to print a debug message only the first time

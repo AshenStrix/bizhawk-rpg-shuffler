@@ -8107,7 +8107,9 @@ function plugin.on_game_load(data, settings)
 	-- Little Samson (NES)
 	-- goal: if you lose an ally, detect that and resurrect them on swapping in
 	if tag == "LittleSamson_NES" then
+		local LittleSamson_NES_ReviveAllies = true -- turn this to false if you don't want this upgrade to Infinite Lives
 		if settings.InfiniteLives == true -- is Infinite Lives enabled?
+			and LittleSamson_NES_ReviveAllies == true
 		-- check if level is high enough to have all the teammates (not 0 through 3) and if "all teammates selectable" is set
 			and memory.read_u8(0x003F, "RAM") > 3 and memory.read_u8(0x0090, "RAM") % 16 == 0xF
 		then

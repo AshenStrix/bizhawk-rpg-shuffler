@@ -1681,32 +1681,6 @@ local function ocarina_swap(gamemeta)
 	end
 end
 
--- TODO: Not necessary anymore? Dev builds (and presumably 2.10/3.0/whatever onward) fix the byte swap that necessitated this
-local function saturn_fix_string_endianness(byteArray)
-	local byteArray2 = {}
-	
-	-- Rotate bytes
-	for i = 1, #byteArray, 2 do
-		byteArray2[i] = byteArray[i+1];
-		byteArray2[i+1] = byteArray[i];
-	end
-	-- Find the end of the string so debugging actually friggin' works
-	local endHere = 1;
-	for i = 1, #byteArray2, 1 do
-		if (byteArray2[i] == 0x00) then
-			break;
-		end
-		endHere = i;
-	end
-	-- Convert to chars
-	local charArray = {};
-	for i = 1, endHere, 1 do
-		charArray[i] = string.char(byteArray2[i]);
-	end
-	local returnString = table.concat(charArray);
-	return string.sub(returnString, 1, endHere);
-end
-
 local function Pebble_Beach_Golf_Links_swap(gamemeta)
 	return function(data)
 		-- If a swap is already scheduled, decrease it but do no further processing.
@@ -1720,20 +1694,6 @@ local function Pebble_Beach_Golf_Links_swap(gamemeta)
 			return false;
 		end
 
---		local currentPlayerChanged, currentPlayer, previousPlayer = update_prev('player', gamemeta.getCurrentPlayer());
---		local player1Changed, player1, prevPlayer1 = update_prev('player1', gamemeta.getPlayer1());
---		-- TODO: This is presumably gonna swap twice if the player was the last to go - thrice if Coffee Break happens. Really need another RAM address to check...
---		-- ALSO TODO: use prevdata to store if an empty player string was encountered. If so, ignore the next two-or-so swaps?
---		if (currentPlayerChanged) then
---			console.log(string.format("Current player changed from \"%s\" to \"%s\"", previousPlayer, currentPlayer));
---			if (previousPlayer == prevPlayer1) then
---				console.log(string.format("Previous player \"%s\" was Player 1 (\"%s\"); will be swapping", previousPlayer, prevPlayer1));
---				data.delayCountdown = gamemeta.delay;
---			else
---				console.log(string.format("Previous player \"%s\" was NOT Player 1 (\"%s\"); no swap needed", previousPlayer, prevPlayer1));
---			end;
---		end;
-
 		if (gamemeta.gmode and not gamemeta.gmode()) then
 			return false; -- Not actually in a round
 		end
@@ -1746,12 +1706,6 @@ local function Pebble_Beach_Golf_Links_swap(gamemeta)
 			update_prev('p1HoleStrokes', 0); -- Reset this now before we actually care
 		end
 		local player1ScoreArray = gamemeta.getPlayer1Scores();
-		-- Rotate bytes, because odd and even positions are swapped, IDK why, endianness doesn't usually work like this
-		--[[for i = 1, #player1ScoreArray, 2 do
-			local temp = player1ScoreArray[i];
-			player1ScoreArray[i] = player1ScoreArray[i+1];
-			player1ScoreArray[i+1] = temp;
-		end]] -- No longer necessary, dev builds (and presumably 2.10/3.0/whatever onward) fix the byte swap
 		local player1StrokesChanged, player1Strokes, prevPlayer1Strokes = update_prev('p1HoleStrokes', player1ScoreArray[hole]);
 		if (player1StrokesChanged) then
 			--console.log("P1 Strokes on hole "..hole.." has changed from "..prevPlayer1Strokes.." to "..player1Strokes);
@@ -4467,7 +4421,7 @@ local gamedata = {
 		get_player_state=function() return memory.read_u16_le(0x73404, "MainRAM") end,
 		stone_state=11,
 		game_over_check=function()
-			gamestate = memory.read_u32_le(0x3C734, "MainRAM")
+			local gamestate = memory.read_u32_le(0x3C734, "MainRAM")
 			if gamestate == 3 and memory.read_u32_le(0x73060, "MainRAM") == 5 then -- Screen melt starting
 				return true -- Game Over
 			else
@@ -4475,7 +4429,7 @@ local gamedata = {
 			end
 		end,
 		is_valid_gamestate=function()
-			gamestate = memory.read_u32_le(0x3C734, "MainRAM")
+			local gamestate = memory.read_u32_le(0x3C734, "MainRAM")
 			return gamestate == 2 -- Gameplay
 				or gamestate == 3 -- Game Over
 		end,
@@ -4488,7 +4442,7 @@ local gamedata = {
 		get_player_state=function() return memory.read_u16_le(0x7340C, "MainRAM") end,
 		stone_state=11,
 		game_over_check=function()
-			gamestate = memory.read_u32_le(0x3C73C, "MainRAM")
+			local gamestate = memory.read_u32_le(0x3C73C, "MainRAM")
 			if gamestate == 3 and memory.read_u32_le(0x73068, "MainRAM") == 0 then -- Screen melt starting
 				return true -- Game Over
 			else
@@ -4496,7 +4450,7 @@ local gamedata = {
 			end
 		end,
 		is_valid_gamestate=function()
-			gamestate = memory.read_u32_le(0x3C73C, "MainRAM")
+			local gamestate = memory.read_u32_le(0x3C73C, "MainRAM")
 			return gamestate == 2 -- Gameplay
 				or gamestate == 3 -- Game Over
 		end,
@@ -4509,12 +4463,12 @@ local gamedata = {
 		get_player_state=function() return memory.read_u16_be(0x99824, "Work Ram High") end,
 		stone_state=11,
 		is_valid_gamestate=function()
-			gamestate = memory.read_u16_be(0x5CD72, "Work Ram High") -- May not be the actual gamestate addr, but works for our purpose
+			local gamestate = memory.read_u16_be(0x5CD72, "Work Ram High") -- May not be the actual gamestate addr, but works for our purpose
 			return gamestate == 1 -- Gameplay
 				or gamestate == 5 -- Game Over
 		end,
 		game_over_check=function()
-			gamestate = memory.read_u16_be(0x5CD72, "Work Ram High")
+			local gamestate = memory.read_u16_be(0x5CD72, "Work Ram High")
 			if gamestate == 5 then -- Changes as soon as the fade-to-white starts
 				return true -- Game Over
 			else
@@ -5731,8 +5685,8 @@ local gamedata = {
 		maxhp=function() return 1 end, -- Strictly speaking this CAN go higher and be handled as extra hit points, but the game itself won't do that
 		minhp=-1,
 		gmode=function()
-			mode = memory.read_s8(0x278, "WRAM")
-			demo = memory.read_s8(0x1FB9, "WRAM")
+			local mode = memory.read_s8(0x278, "WRAM")
+			local demo = memory.read_s8(0x1FB9, "WRAM")
 			return demo ~= 2 and (mode == 0x2 or mode == 0x4 or mode == 0x5) -- Modes are Map, Gameplay, or Game Over, respectively
 		end,
 		swap_exceptions=function(gamemeta)
@@ -6715,14 +6669,14 @@ local gamedata = {
 	['Sonic3D_GEN']={ -- Sonic 3D Blast: Flickies' Island (Genesis/Mega Drive)
 		func=sonic_swap,
 		gmode=function()
-			mode = memory.read_u16_be(0x3FE, "68K RAM")
+			local mode = memory.read_u16_be(0x3FE, "68K RAM")
 			return mode == 0x5F8 -- Gameplay
 				or mode == 0x5A0 -- Stage loading; lives are subtracted the same time this mode is set, so we need to use it
 		end,
 		get_rings=function() return memory.read_u16_be(0xA5A, "68K RAM") end,
 		get_shield=function() return memory.read_u8(0xAC2, "68K RAM") & 0x40 end,
 		get_lives=function()
-			mode = memory.read_u16_be(0x3FE, "68K RAM")
+			local mode = memory.read_u16_be(0x3FE, "68K RAM")
 			if mode == 0x91E or mode == 0x88C then -- Game Over or Continue; both are handled if you die with 0 lives, which is otherwise a valid life number
 				return -1
 			end
@@ -6738,7 +6692,7 @@ local gamedata = {
 	['Sonic3D_SAT']={ -- Sonic 3D Blast (Saturn)
 		func=sonic_swap,
 		gmode=function()
-			mode = memory.read_u8(0xFF06, "Work Ram High")
+			local mode = memory.read_u8(0xFF06, "Work Ram High")
 			return (mode >= 0x4 and mode <= 0x16) -- RA asserts this is gameplay, but it appears to be music tracks? Well, here's all the gameplay ones, at least
 				or mode == 0x1D -- Loading? At any rate this mode accompanies a life loss
 				or mode == 0x18 -- Continue
@@ -6747,7 +6701,7 @@ local gamedata = {
 		get_rings=function() return memory.read_u16_be(0x9800C, "Work Ram High") end,
 		get_shield=function() return memory.read_u8(0x9807D, "Work Ram High") & 0x40 end,
 		get_lives=function()
-			mode = memory.read_u8(0xFF06, "Work Ram High")
+			local mode = memory.read_u8(0xFF06, "Work Ram High")
 			if mode == 0x3 or mode == 0x18 then -- Game Over or Continue; both are handled if you die with 0 lives, which is otherwise a valid life number
 				return -1
 			end
@@ -6773,9 +6727,9 @@ local gamedata = {
 			return memory.read_u8(0x579E, "68K RAM") -- Bonus not being relevant, use the normal life value
 		end,
 		gmode=function()
-			demomode = memory.read_u8(0x6, "68K RAM")
-			gamestate = memory.read_u16_be(0x3CB6, "68K RAM")
-			bonusstate = memory.read_u16_be(0x3CA8, "68K RAM")
+			local demomode = memory.read_u8(0x6, "68K RAM")
+			local gamestate = memory.read_u16_be(0x3CB6, "68K RAM")
+			local bonusstate = memory.read_u16_be(0x3CA8, "68K RAM")
 			if demomode == 1 then
 				return false -- In demo, ignore
 			end
@@ -6796,7 +6750,7 @@ local gamedata = {
 	['IQ_PS1_NA']={ -- I.Q.: Intelligent Qube, PS1 (TODO: PAL? Japan?)
 		func=iq_swap,
 		gmode=function()
-			gamemode = memory.read_u8(0x6C7F8, "MainRAM")
+			local gamemode = memory.read_u8(0x6C7F8, "MainRAM")
 			return gamemode == 0x04 -- Gameplay
 				or gamemode == 0x0A -- Gameplay? (RA says this can happen)
 				or gamemode == 0x12 -- Death
@@ -6815,7 +6769,7 @@ local gamedata = {
 				and memory.read_u32_le(0x1FFFEC, "MainRAM") ~= 0x00000000 -- Need something to point to
 		end,
 		p1gethp=function()
-			statePtr = memory.read_u32_le(0x1FFFEC, "MainRAM")
+			local statePtr = memory.read_u32_le(0x1FFFEC, "MainRAM")
 			if (statePtr == 0x00000000) then
 				return 0
 			else
@@ -6826,7 +6780,7 @@ local gamedata = {
 		maxhp=function() return 0x7FFFFFFF end, -- There is seemingly no actual cap, but the value is signed and the minus character is garbage data
 		minhp=-1, -- You can live with 0 health
 		p1getlc=function()
-			statePtr = memory.read_u32_le(0x1FFFEC, "MainRAM")
+			local statePtr = memory.read_u32_le(0x1FFFEC, "MainRAM")
 			if (statePtr == 0x00000000) then
 				return 0
 			else
@@ -6839,7 +6793,7 @@ local gamedata = {
 		end,]]
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function()
-			statePtr = memory.read_u32_le(0x1FFFEC, "MainRAM")
+			local statePtr = memory.read_u32_le(0x1FFFEC, "MainRAM")
 			if (statePtr == 0x00000000) then
 				return nil -- Do not set lives this shuffle
 			else
@@ -7448,33 +7402,148 @@ local gamedata = {
 			end
 		end,
 	},
-	['PowerslaveExhumed_SAT']={ -- Powerslave/Exhumed, Saturn
+	['Powerslave_SAT']={ -- Powerslave, Saturn
 		func=health_swap,
-		get_health=function() return memory.read_u16_be(0x8608A, "Work Ram High") end,
+		get_health=function() return memory.read_s16_be(0x8608A, "Work Ram High") end,
 		is_valid_gamestate=function()
 			if memory.read_u8(0x90DF9, "Work Ram High") ~= 0x11 then
 				return false
 			end
 
 			-- This would go better in swap_exceptions, but going by the current flow of health_swap, is_valid_gamestate is used the same way???
+			-- Lava check
+			-- Here's how this works internally, according to SRUINS.C:179 in the SlaveDriver source code @ https://github.com/Lobotomy-Software/SlaveDriver-Engine/:
+			--
+			-- When the player touches lava or slime, ltHurtTime is set to 30 (BizHawk shows it as 29 though?) and ltHurtAmount is set to how much damage the floor will do per frame.
+			-- If you lack the Protective Anklet, this will be 20 HP per frame (and the player will almost certainly die, as there aren't enough health Ankhs before the Anklets to eat that damage).
+			-- If you HAVE the Protective Anklet, this is 2 HP per frame for lava, and 0 HP per frame for slime. (Slime DOES hurt on PS1, but not on Saturn.)
+			-- These values are set constantly as long as contact is maintained, but when contacct breaks, ltHurtTime is allowed to count down to 0.
+			-- While ltHurtTime is above 0, the value of ltHurtAmount is done to player health. When it reaches 0, damage stops.
+			-- The value of ltHurtAmount lingers at whatever the last value it was set to was.
 			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_swapexceptions", memory.read_u16_be(0x4A58A, "Work Ram High"))
-			if hurtfloordrain_curr ~= nil and hurtfloordrain_prev ~= nil and hurtfloordrain_curr >= 0 and hurtfloordrain_prev > 0 then
-				return false -- Lava drain had already started and hasn't stopped
+			if
+				hurtfloordrain_curr ~= nil
+				and hurtfloordrain_prev ~= nil
+				and hurtfloordrain_curr >= 0
+				and hurtfloordrain_prev > 0
+				and memory.read_u16_be(0x4A586, "Work Ram High") ~= 0 -- Player isn't on slime while protected by anklets
+			then
+				return false -- Lava drain had already started and hasn't stopped, do not shuffle so the player has a chance to reorient themselves
+			end
+
+			-- Drowning check
+			-- Here's how this works internally, according to SRUINS.C:1421 in the SlaveDriver source code @ https://github.com/Lobotomy-Software/SlaveDriver-Engine/:
+			--
+			-- 1. If the player is underwater, underCount goes up, apparently by two.
+			-- 2. If underCount hits 220, airStatus is increased by 27.0. (It's technically a 32-bit 16.16 fixed-point variable, but it's only modified by integer values.)
+			-- 3. If airStatus is above 270.0:
+			--     * Player health is docked 30.
+			--     * airStatus is set back to 270.0.
+			--     * underCount is set to the value of drownStatus.
+			--     * drownStatus is set to 180, so subsequent drowning loops will happen much faster.
+			-- 4. Else, underCount continues going up until 240, when it's set back to 0.
+			--     * drownStatus is also set to 0 in this instance, in preparation for the loop in step 3.
+			-- 5. If the player surfaces:
+			--     * underCount is set to -1.
+			--     * airStatus is set to 0.0.
+			--     * drownStatus is left at whatever value is was before - 0 or 180 - and thus can't be the sole indicator of fast drowning.
+			-- Note that all of this presumes you have the Sobek Mask to prolong underwater breathing.
+			-- If you don't, airStatus is immediately set to 270.0, and drownStatus is never reset from 180.
+			local underCount_changed, underCount, underCount_prev = update_prev("underCount", memory.read_s16_be(0x4A5E6, "Work Ram High"))
+			local drownStatus_changed, drownStatus, drownStatus_prev = update_prev("drownStatus", memory.read_s16_be(0x4A5CE, "Work Ram High"))
+			local airStatus = memory.read_s16_be(0x4A5C8, "Work Ram High")
+			if
+				airStatus == 270 -- Drowning threshold reached
+				and underCount_changed
+				and underCount_prev > underCount -- underCount dropped from 220
+				and drownStatus == 180
+				--and not drownStatus_changed -- If this JUST shot up to 180, let the drowning initiation cause a shuffle anyway
+			then
+				return false -- Damage was caused by drowning, do not shuffle so the player has a chance to reorient themselves
 			end
 
 			-- Everything checks out
 			return true
 		end,
-		--[[swap_exceptions=function() -- TODO: This isn't actually implemented in health_swap
-			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_swapexceptions", memory.read_u16_be(0x4A58A, "Work Ram High"))
-			if hurtfloordrain_curr ~= nil and hurtfloordrain_prev ~= nil and hurtfloordrain_curr > 0 and hurtfloordrain_prev > 0 then
-				return true -- Lava drain had already started and hasn't stopped
+		grace=90,
+	},
+	['Exhumed_SAT']={ -- Exhumed (Powerslave PAL), Saturn
+		func=health_swap,
+		get_health=function() return memory.read_s16_be(0x85286, "Work Ram High") end,
+		is_valid_gamestate=function()
+			if memory.read_u8(0x8FFE5, "Work Ram High") ~= 0x11 then
+				return false
 			end
-			return false
-		end,]]
-		other_swaps=function() -- TODO: not necessary???
-			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_otherswaps", memory.read_u16_be(0x4A58A, "Work Ram High"))
-			return hurtfloordrain_changed and hurtfloordrain_prev ~= nil and hurtfloordrain_prev == 0
+
+			-- This would go better in swap_exceptions, but going by the current flow of health_swap, is_valid_gamestate is used the same way???
+			-- Lava check (see Powerslave for pseudocode breakdown)
+			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_swapexceptions", memory.read_u16_be(0x498C2, "Work Ram High"))
+			if
+				hurtfloordrain_curr ~= nil
+				and hurtfloordrain_prev ~= nil
+				and hurtfloordrain_curr >= 0
+				and hurtfloordrain_prev > 0
+				and memory.read_u16_be(0x498BE, "Work Ram High") ~= 0 -- Player isn't on slime while protected by anklets
+			then
+				return false -- Lava drain had already started and hasn't stopped, do not shuffle so the player has a chance to reorient themselves
+			end
+
+			-- Drowning check (see Powerslave for pseudocode breakdown)
+			local underCount_changed, underCount, underCount_prev = update_prev("underCount", memory.read_s16_be(0x4991E, "Work Ram High"))
+			local drownStatus_changed, drownStatus, drownStatus_prev = update_prev("drownStatus", memory.read_s16_be(0x49906, "Work Ram High"))
+			local airStatus = memory.read_s16_be(0x49900, "Work Ram High")
+			if
+				airStatus == 270 -- Drowning threshold reached
+				and underCount_changed
+				and underCount_prev > underCount -- underCount dropped from 220
+				and drownStatus == 180
+				--and not drownStatus_changed -- If this JUST shot up to 180, let the drowning initiation cause a shuffle anyway
+			then
+				return false -- Damage was caused by drowning, do not shuffle so the player has a chance to reorient themselves
+			end
+
+			-- Everything checks out
+			return true
+		end,
+		grace=90,
+	},
+	['Seireki1999_SAT']={ -- Seireki 1999: Pharaoh no Fukkatsu (Powerslave NTSC-J), Saturn
+		func=health_swap,
+		get_health=function() return memory.read_s16_be(0x86B52, "Work Ram High") end,
+		is_valid_gamestate=function()
+			if memory.read_u8(0x918C1, "Work Ram High") ~= 0x11 then
+				return false
+			end
+
+			-- This would go better in swap_exceptions, but going by the current flow of health_swap, is_valid_gamestate is used the same way???
+			-- Lava check (see Powerslave for pseudocode breakdown)
+			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_swapexceptions", memory.read_u16_be(0x4A822, "Work Ram High"))
+			if
+				hurtfloordrain_curr ~= nil
+				and hurtfloordrain_prev ~= nil
+				and hurtfloordrain_curr >= 0
+				and hurtfloordrain_prev > 0
+				and memory.read_u16_be(0x4A81E, "Work Ram High") ~= 0 -- Player isn't on slime while protected by anklets
+			then
+				return false -- Lava drain had already started and hasn't stopped, do not shuffle so the player has a chance to reorient themselves
+			end
+
+			-- Drowning check (see Powerslave for pseudocode breakdown)
+			local underCount_changed, underCount, underCount_prev = update_prev("underCount", memory.read_s16_be(0x4A87E, "Work Ram High"))
+			local drownStatus_changed, drownStatus, drownStatus_prev = update_prev("drownStatus", memory.read_s16_be(0x4A866, "Work Ram High"))
+			local airStatus = memory.read_s16_be(0x4A860, "Work Ram High")
+			if
+				airStatus == 270 -- Drowning threshold reached
+				and underCount_changed
+				and underCount_prev > underCount -- underCount dropped from 220
+				and drownStatus == 180
+				--and not drownStatus_changed -- If this JUST shot up to 180, let the drowning initiation cause a shuffle anyway
+			then
+				return false -- Damage was caused by drowning, do not shuffle so the player has a chance to reorient themselves
+			end
+
+			-- Everything checks out
+			return true
 		end,
 		grace=90,
 	},

@@ -5595,6 +5595,9 @@ local gamedata = {
 		swap_exceptions=function()
 			-- end of level, ticks down time, then health
 			-- if timer is all zeros, and you didn't lose a life from time up, don't swap
+			-- health ticks down every 12 frames, but waiting for this eats into the 100 iframes you get on hit
+			-- (and reaction time to avoid pitfalls and the like on swapping back in)
+			-- so we just code an exception for end of level instead of using delay, to give more reaction time
 			local lives_changed = update_prev ("lives", memory.read_s8(0x6c0, "RAM"))
 			if 
 				(memory.read_u8(0x691, "RAM") == 0 and memory.read_u8(0x692, "RAM") == 0 and

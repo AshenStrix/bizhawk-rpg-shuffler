@@ -585,7 +585,7 @@ local function singleplayer_withlives_swap(gamemeta)
 		end
 		
 		-- if the health goes to 0, we will rely on the life count to tell us whether to swap
-		if p1prevhp ~= nil and p1currhp < p1prevhp then
+		if p1prevhp ~= nil and p1currhp < p1prevhp and p1currhp > minhp and p1currhp < maxhp then
 			data.p1hpcountdown = gamemeta.delay or 3
 		end
 
@@ -771,11 +771,11 @@ local function twoplayers_withlives_swap(gamemeta)
 		end
 
 		-- if the health goes to 0, we will rely on the life count to tell us whether to swap
-		if p1prevhp ~= nil and p1currhp < p1prevhp then
+		if p1prevhp ~= nil and p1currhp < p1prevhp and p1currhp > minhp and p1currhp < maxhp then
 			data.p1hpcountdown = gamemeta.delay or 3
 		end
 		
-		if p2prevhp ~= nil and p2currhp < p2prevhp then
+		if p2prevhp ~= nil and p2currhp < p2prevhp and p2currhp > minhp and p2currhp < maxhp then
 			data.p2hpcountdown = gamemeta.delay or 3
 		end
 

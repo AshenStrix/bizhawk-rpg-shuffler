@@ -3506,6 +3506,9 @@ local gamedata = {
 	},
 	['BLOODLINES_GEN']={ -- Castlevania: Bloodlines, Genesis
 		func=singleplayer_withlives_swap,
+		-- 0x9002: active gameplay == 9, main menu == 4, options == 5
+		-- other relevant values include 12 and 13 for ending, where HP drops to 1
+		gmode=function() return memory.read_u16_be(0x9002, "68K RAM") == 9 end,
 		p1gethp=function() return memory.read_u8(0x9C11, "68K RAM") end,
 		p1getlc=function() return memory.read_u8(0xFB2F, "68K RAM") end,
 		maxhp=function() return 80 end,

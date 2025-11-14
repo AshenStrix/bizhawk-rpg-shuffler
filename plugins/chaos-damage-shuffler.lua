@@ -3495,12 +3495,15 @@ local gamedata = {
 	},
 	['CV4_SNES']={ -- Super Castlevania IV, SNES
 		func=singleplayer_withlives_swap,
-		p1gethp=function() return memory.read_u8(0x0013F4, "WRAM") end,
-		p1getlc=function() return memory.read_u8(0x00007C, "WRAM") end,
+		-- 0x0032: active gameplay == 4, demo == 2, password == 6
+		-- most importantly, ending == 7, and HP drops to 0 during transitions there (sometimes lives do as well)
+		gmode=function() return memory.read_u8(0x0032, "WRAM") == 4 end,
+		p1gethp=function() return memory.read_u8(0x13F4, "WRAM") end,
+		p1getlc=function() return memory.read_u8(0x007C, "WRAM") end,
 		maxhp=function() return 16 end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "WRAM" end,
-		p1livesaddr=function() return 0x00007C end,
+		p1livesaddr=function() return 0x007C end,
 		maxlives=function() return 106 end,
 		ActiveP1=function() return true end, -- p1 is always active!
 	},

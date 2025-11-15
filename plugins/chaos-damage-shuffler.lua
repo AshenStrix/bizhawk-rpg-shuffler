@@ -5653,9 +5653,17 @@ local gamedata = {
 	},
 	['Gimmick_NES']={ -- Gimmick!, NES
 		func=singleplayer_withlives_swap,
+		-- maxhp (at 0x002B) can change between stages if player has collected orange potions
+		-- and, this means that you can drop from 3 or 4 hp to 2 between levels for non-damage reasons
+		-- the value at this address unfortunately changes 1 frame before the hp drop; neither gmode nor a toggle check will do
+		-- swap_exceptions option: 0x00E1 relates to player state; 0x53 is on map screen, which is where maxhp changes happen
 		p1gethp=function() return memory.read_u8(0x346, "RAM") end,
 		p1getlc=function() return memory.read_u8(0x104, "RAM") end,
-		maxhp=function() return 255 end,
+		maxhp=function() return 4 end,
+		swap_exceptions=function() 
+			if memory.read_u8(0x00E1, "RAM") == 0x53 then return true end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x104 end,

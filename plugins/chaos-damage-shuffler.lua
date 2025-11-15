@@ -2368,6 +2368,9 @@ local function PockyRocky2_SNES_swap(gamemeta)
 		-- as changes in HP during these situations should be processed but should not swap
 		local currmerged    = gamemeta.getmerged()
 		local currmerging   = gamemeta.getmerging()
+		-- in Level 5, you ride a mount that has 3 HP, and if they lose HP, you should swap
+		local currmounthp   = gamemeta.getmounthp()
+		local currlevel     = gamemeta.getlevel()
 
 		-- retrieve previous hp/lives/merging data before backup
 		local pockyprevhp   = data.pockyprevhp
@@ -2376,6 +2379,8 @@ local function PockyRocky2_SNES_swap(gamemeta)
 		local p2prevhp      = data.p2prevhp
 		local prevmerged    = data.prevmerged
 		local prevmerging   = data.prevmerging
+		local prevmounthp   = data.prevmounthp
+		local prevlevel     = data.prevlevel
 
 		data.pockyprevhp    = pockycurrhp
 		data.pockyprevlc    = pockycurrlc
@@ -2383,6 +2388,8 @@ local function PockyRocky2_SNES_swap(gamemeta)
 		data.p2prevhp       = p2currhp
 		data.prevmerged     = currmerged
 		data.prevmerging    = currmerging
+		data.prevmounthp    = currmounthp
+		data.prevlevel      = currlevel
 
 		-- this delay ensures that when the game ticks away health for the end of a level,
 		-- we can catch its purpose and hopefully not swap, since this isnt damage related
@@ -2400,8 +2407,12 @@ local function PockyRocky2_SNES_swap(gamemeta)
 			end
 		end
 
-		-- if the health goes to 0, we will rely on the life count to tell us whether to swap
 		if pockyprevhp ~= nil and pockycurrhp < pockyprevhp then
+			data.p1hpcountdown = gamemeta.delay or 3
+		end
+		-- if the level 5 mount's health goes to 0, we will rely on the life count to tell us whether to swap
+		-- constraining valid HP is especially important as we don't have the typical minhp or maxhp in this custom function
+		if prevmounthp ~= nil and currmounthp < prevmounthp and currmounthp > 0 and currmounthp < 4  and currlevel == 0x04 then
 			data.p1hpcountdown = gamemeta.delay or 3
 		end
 		-- Situations where we want to cue up a swap for P2's HP dropping:
@@ -6099,6 +6110,8 @@ local gamedata = {
 		getp2hp=function() return memory.read_u8(0x05EA, "WRAM") end,
 		getmerged=function() return memory.read_u8(0x19CE, "WRAM") >= 0x80 end,
 		getmerging=function() return memory.read_u8(0x04B2, "WRAM") end,
+		getmounthp=function() return memory.read_u8(0x19F2, "WRAM") end,
+		getlevel=function() return memory.read_u8(0x0552, "WRAM") end,
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function() return 0x19F4 end,
 		LivesWhichRAM=function() return "WRAM" end,

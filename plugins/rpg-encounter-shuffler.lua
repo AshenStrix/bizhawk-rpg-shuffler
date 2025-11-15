@@ -70,17 +70,50 @@ local function encounter_swap(gamemeta)
 	end
 end
 
+local function ff2nes_swap(gamemeta)
+	return function()
+		local isChanged, curValue, prevValue = update_prev('ff2Transition', gamemeta.transitionCounter())
+		return isChanged and (curValue == 0x0041) and (prevValue == 0x0040)
+	end
+end
+
 local gamedata = {
+	['FF1_NES']={ -- Final Fantasy 1 NES
+		func=encounter_swap,
+		inEncounter=function() return memory.read_u8(0x0081, "RAM") == 0x063 end, --TODO:
+		--logfunc=function() log_console('ff1 memory: ' .. memory.read_u16_le(0x000684, "WRAM")) end,
+	},
+	['FF2_NES']={ -- Final Fantasy 2 NES
+		func=ff2nes_swap,
+		transitionCounter=function() return memory.read_u8(0x008C, "RAM") end, --TODO:
+		--[[logfunc=function()
+			if(curValue ~= nil and prevValue ~= nil) then
+			 log_console('ff2 memory: ' .. memory.read_u8(0x008C, "RAM") .. ' curValue: ' .. curValue .. ' prevValue: ' .. prevValue)
+			end
+		end,]]
+	},
+	['FF3_NES']={ -- Final Fantasy 3 NES
+		func=encounter_swap,
+		inEncounter=function() return memory.read_u8(0x0001, "RAM") == 0x0001 end, --TODO:Fix Swap when starting credits sequence
+		--logfunc=function() log_console('ff3 memory: ' .. memory.read_u16_le(0x000684, "WRAM")) end,
+	},
+	['FF4_SNES']={ -- Final Fantasy 4 SNES
+		func=encounter_swap,
+		inEncounter=function() return memory.read_u16_le(0x116e0, "WRAM") == 0x0100 end, --TODO: Look for logic that swaps when battle starts (after zoom-in, ideally during black screen)
+		--logfunc=function() log_console('ff4 memory: ' .. memory.read_u16_le(0x000684, "WRAM")) end,
+	},
+	['FF5_GBA']={ -- Final Fantasy 5 GBA
+		func=encounter_swap,
+		--inEncounter=function() return memory.read_u16_le(0x0096E0, "EWRAM") == 0x0011 end, --TODO: Try transition from 0x0011 -> 0x000A
+		inEncounter=function() return memory.read_u8(0x96E0, "EWRAM") == 0x0011 end, --TODO: Try transition from 0x0011 -> 0x000A
+		--logfunc=function() log_console('ff5 memory: ' .. memory.read_u8(0x96E0, "EWRAM")) end,
+	},
 	['FF6_SNES']={ -- Final Fantasy 6 SNES
 		func=encounter_swap,
 		inEncounter=function() return memory.read_u16_le(0x000054, "WRAM") == 0xFF00 end,
 		--logfunc=function() log_console('ff6 memory: ' .. memory.read_u16_le(0x000054, "WRAM")) end,
 	},
-	['FF4_SNES']={ -- Final Fantasy 4 SNES
-		func=encounter_swap,
-		inEncounter=function() return memory.read_u16_le(0x000684, "WRAM") == 0x0100 end, --TODO: Look for logic that swaps when battle starts (after zoom-in, ideally during black screen)
-		--logfunc=function() log_console('ff4 memory: ' .. memory.read_u16_le(0x000684, "WRAM")) end,
-	}
+
 }
 
 local backupchecks = {

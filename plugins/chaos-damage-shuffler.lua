@@ -284,6 +284,7 @@ plugin.description =
 	-Vs. Ice Climber, set IC4-4 B-1 (Arcade), 1p
 	-WarioWare, Inc.: Mega Microgame$! (GBA), 1p - bonus games including 2p are pending
 	-Wild Guns (SNES), 1p
+	-Windjammers / Flying Power Disc (Arcade), 1p
 	-Wit's (NES), 1p
 
 	NICHE ZONE
@@ -8059,6 +8060,21 @@ local gamedata = {
 		LivesWhichRAM=function() return "WRAM" end,
 		maxlives=function() return 9 end,
 		ActiveP1=function() return true end, -- p1 is always active!
+	},
+	['Windjammers_ARC']={ -- Windjammers / Flying Power Disc
+		func=function() 
+			return function()
+				local points_changed, points_curr, points_prev = update_prev("points", memory.read_u8(0x0008F3, "m68000 : ram : 0x100000-0x10FFFF")) -- max points == 21
+				local sets_changed, sets_curr, sets_prev = update_prev("sets", memory.read_u8(0x0008F2, "m68000 : ram : 0x100000-0x10FFFF")) -- max sets == 2
+				-- shuffle occurs when opponent gets points
+				if points_changed and points_curr > points_prev then return true, 30 end
+				-- shuffle occurs when opponent wins a set
+				if sets_changed and sets_curr > sets_prev then return true, 150 end
+			return false
+			end
+		end,
+		grace=110, -- avoid double-swaps on giving up points at the end of sets
+		-- infinite lives does not apply
 	},
 }
 

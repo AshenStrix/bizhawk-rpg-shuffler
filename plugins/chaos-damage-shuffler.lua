@@ -2672,6 +2672,7 @@ local gamedata = {
 		-- this value is the "game state" where the game is fading out after Samus dies.
 		-- Tells us Samus hit 0 for real, not due to resets etc.
 		gethp=function() return memory.read_u16_le(0x09C2, "WRAM") end,
+		grace=60,
 	},
 	['SMZ3']={ -- Super Metroid x A Link to the Past Crossover Randomizer
 		func=SMZ3_swap,
@@ -2704,6 +2705,7 @@ local gamedata = {
 			end
 		end,
 		getwhichgame=function() return memory.read_u8(0x33FE, "CARTRAM") end,
+		grace=60,
 	},
 	['Anticipation']={ -- Anticipation NES
 		func=antic_swap,
@@ -3628,6 +3630,7 @@ local gamedata = {
 			-- set to 0xFFFF when timer is off, counts down in decimal mode from 0x9999 while on, set to 0xFF00 when time runs out
 			return time_up_changed and time_up_curr
 		end,
+		grace=60,
 	},
 	['Metroid2']={ -- Metroid II Return of Samus, GB
 		func=iframe_health_swap,
@@ -3637,6 +3640,7 @@ local gamedata = {
 		-- like nes metroid, health is stored in decimal mode
 		other_swaps=function() return false end,
 		-- no escape sequence this game
+		grace=60,
 	},
 	['MetroidFusion']={ -- Metroid Fusion, GBA
 		func=iframe_health_swap,
@@ -3663,6 +3667,7 @@ local gamedata = {
 			return time_up_changed and time_up_curr, 65
 			-- add extra delay so you get the whiteout animation before shuffling
 		end,
+		grace=60,
 	},
 	['MetroidZero']={ -- Metroid Zero Mission, GBA
 		func=iframe_health_swap,
@@ -3709,6 +3714,7 @@ local gamedata = {
 			end
 			return false
 		end,
+		grace=60,
 	},
 	['Zelda_1']={ -- The Legend of Zelda, NES
 		func=iframe_health_swap,

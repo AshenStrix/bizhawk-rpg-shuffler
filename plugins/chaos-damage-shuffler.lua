@@ -7282,11 +7282,11 @@ local gamedata = {
 		-- when p1 is being damaged, 0xCB56 turns to 0x20 (blinks up to 0x21 and back to 0x20 on a throw)
 		func=iframe_health_swap,
 		is_valid_gamestate=function() return true end,
-		get_iframes=function() return memory.read_u8(0xCABB, "68K RAM") end, -- todo: work out no shuffle on block
+		get_iframes=function() return memory.read_u16_be(0xCABA, "68K RAM") end, -- todo: work out no shuffle on block
 		other_swaps=function() return false end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "68K RAM" end,
-		p1livesaddr=function() return 0xAB7A end,
+		p1livesaddr=function() return 0xAB7B end, -- low byte of 16 bit BE word
 		maxlives=function() return 9 end,
 		ActiveP1=function() return true end, -- if infinite lives are on, p1 will always be active
 		grace=60, -- this should help with punch combos

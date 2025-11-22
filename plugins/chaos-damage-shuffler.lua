@@ -5780,6 +5780,7 @@ local gamedata = {
 		other_swaps=function() return false end,
 		get_health=function() return memory.read_u16_le(0xA424, "68K RAM") end,
 		maxhp=function() return 100 end,
+		grace=60,
 	},
 	['ContraHardCorps_GEN']={ -- Contra - Hard Corps, Genesis
 		func=twoplayers_withlives_swap,

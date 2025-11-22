@@ -5778,8 +5778,7 @@ local gamedata = {
 		func=health_swap,
 		is_valid_gamestate=function() return memory.read_u16_be(0xA284, "68K RAM") == 0x38 end,
 		other_swaps=function() return false end,
-		get_health=function() return memory.read_u16_le(0xA424, "68K RAM") end,
-		maxhp=function() return 100 end,
+		get_health=function() return memory.read_u16_be(0xA424, "68K RAM") end, -- note; health will not go above 999
 		grace=60,
 	},
 	['ContraHardCorps_GEN']={ -- Contra - Hard Corps, Genesis

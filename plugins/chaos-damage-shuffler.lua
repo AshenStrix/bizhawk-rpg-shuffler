@@ -6178,14 +6178,21 @@ local gamedata = {
 	},
 	['SimpsonsBartvsWorld_NES']={ -- The Simpsons: Bart vs. the World, NES
 		func=singleplayer_withlives_swap,
+		gmode=function() return
+			-- player has to be in control and not in a minigame like the sliding puzzle
+			-- NOTE: if implementing swaps for bonus game fails, this will need adjustment!
+			(memory.read_u8(0x0079, "RAM") == 0 -- sidescrolling Bart; this address is 0xFF in minigames, aside from skateboard
+			or memory.read_u8(0x0425, "RAM") == 0x24) -- Bart on skateboard; 0x20 is walking, 0x22 is Bartman
+		end,
 		p1gethp=function() return memory.read_u8(0x06bc, "RAM") end,
 		p1getlc=function() return memory.read_s8(0x06c1, "RAM") end,
-		maxhp=function() return 255 end,
+		maxhp=function() return 5 end,
+		minhp=-1,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x06c1 end,
 		maxlives=function() return 5 end,
-		ActiveP1=function() return true end, -- p1 is always active!	
+		ActiveP1=function() return true end, -- p1 is always active!
 	},
 	['Sparkster_SNES']={ -- Sparkster, SNES
 		func=singleplayer_withlives_swap,

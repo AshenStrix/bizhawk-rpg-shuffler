@@ -5276,7 +5276,7 @@ local gamedata = {
 			end
 			
 		end,
-		grace=20, -- just make sure we don't combo on deaths
+		grace=50, -- just make sure we don't combo on deaths (previously 20)
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function() return 0x157911 end,
 		-- importantly, we have to write just one byte

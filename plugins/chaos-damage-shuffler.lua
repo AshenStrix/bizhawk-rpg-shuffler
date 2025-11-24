@@ -5589,6 +5589,7 @@ local gamedata = {
 		p1gethp=function() return memory.read_u8(0x5a0, "RAM") end,
 		p1getlc=function() return memory.read_u8(0x004C, "RAM") end,
 		maxhp=function() return 255 end,
+		grace=50, -- note, you appear to get 32 iframes with no recoil
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x004C end,

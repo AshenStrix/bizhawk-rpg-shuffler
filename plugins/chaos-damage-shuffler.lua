@@ -8078,16 +8078,25 @@ local gamedata = {
 	['Windjammers_ARC']={ -- Windjammers / Flying Power Disc
 		func=function() 
 			return function()
-				local points_changed, points_curr, points_prev = update_prev("points", memory.read_u8(0x0008F3, "m68000 : ram : 0x100000-0x10FFFF")) -- max points == 21
-				local sets_changed, sets_curr, sets_prev = update_prev("sets", memory.read_u8(0x0008F2, "m68000 : ram : 0x100000-0x10FFFF")) -- max sets == 2
+				local p2_points_changed, p2_points_curr, p2_points_prev = update_prev("p2_points", memory.read_u8(0x0008F3, "m68000 : ram : 0x100000-0x10FFFF")) -- max points == 0x15 (approximated)
+				local p1_sets_changed, p1_sets_curr, p1_sets_prev = update_prev("p1_sets", memory.read_u8(0x000872, "m68000 : ram : 0x100000-0x10FFFF")) -- max sets == 2
+				local p2_sets_changed, p2_sets_curr, p2_sets_prev = update_prev("p2_sets", memory.read_u8(0x0008F2, "m68000 : ram : 0x100000-0x10FFFF")) -- max sets == 2
+				-- gmode, no shuffling outside of gameplay
+				if memory.read_u8(0x00008A, "m68000 : ram : 0x100000-0x10FFFF")~=120 then return false end
 				-- shuffle occurs when opponent gets points
-				if points_changed and points_curr > points_prev then return true, 30 end
+				if p2_points_changed and p2_points_curr > p2_points_prev then return true, 30 end
 				-- shuffle occurs when opponent wins a set
-				if sets_changed and sets_curr > sets_prev then return true, 150 end
+				if p2_sets_changed and p2_sets_curr > p2_sets_prev then
+					-- ties count as a win for both players, so suppress shuffle for tie when player 1 also wins a set
+					-- specifically: if score goes to 1-1 or 2-2 (leading to sudden death), don't swap
+					-- if a tie set leads to opponent winning (this would be 2 sets to 1), then DO swap
+					if p1_sets_changed and p1_sets_curr > p1_sets_prev and not (p1_sets_curr == 1 and p2_sets_curr == 2) then return false end 
+					return true, 150
+					end
 			return false
 			end
 		end,
-		grace=110, -- avoid double-swaps on giving up points at the end of sets
+		grace=150, -- avoid double-swaps on giving up points at the end of sets
 		-- infinite lives does not apply
 	},
 }

@@ -156,6 +156,7 @@ plugin.description =
 	-Crash Bandicoot 4 (Bootleg) (NES), 1p
 	-Darkwing Duck (NES), 1p
 	-Demon's Crest (SNES), 1p
+	-Dick Tracy (NES), 1p
 	-Do-Re-Mi Fantasy - Milon no Dokidoki Daibouken (SNES), 1p
 	-Double Dragon 1 (NES), 1-2p, Mode A or B, shuffles on knockdown and death
 	-Double Dragon 2 (NES), 1-2p, shuffles on knockdown and death
@@ -8098,6 +8099,18 @@ local gamedata = {
 		end,
 		grace=150, -- avoid double-swaps on giving up points at the end of sets
 		-- infinite lives does not apply
+	},
+	['DickTracy_NES']={ -- Dick Tracy, NES
+		func=health_swap,
+		is_valid_gamestate=function() return true end,
+		get_health=function() return memory.read_u8(0x0663, "RAM") end,
+		other_swaps=function() 
+			-- 0x002C: screen type; 10 == game over, 3 == office, 2 == safe cracking to continue
+			local game_over_changed, game_over_curr = update_prev("game_over", memory.read_u8(0x002C, "RAM") == 10)
+			if game_over_changed and game_over_curr == true then return true end
+			return false 
+		end,
+		grace=60, -- iframes are very short, easy to get shot repeatedly on swapping in
 	},
 }
 

@@ -6057,7 +6057,7 @@ local gamedata = {
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x036a end,
-		maxlives=function() return 69 end,
+		maxlives=function() return 7 end, -- lives count down on clearing this game
 		ActiveP1=function() return true end, -- p1 is always active!
 	},
 	['HighSeasHavoc_GEN']={ -- High Seas Havoc, Genesis

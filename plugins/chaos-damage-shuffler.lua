@@ -6441,11 +6441,21 @@ local gamedata = {
 		p1gethp=function() return memory.read_s8(0x0264, "WRAM") end,
 		p1getlc=function() return memory.read_s8(0x024C, "WRAM") end,
 		maxhp=function() return 5 end,
+		minhp=-1,
+		swap_exceptions=function()
+			-- 0x0104: appears to be level/map
+			-- map screen == 15; when you go from 15 to a level, health drops to 0
+			-- catch all scene transitions and disallow swapping on them
+			local scene_changed = update_prev("scene", memory.read_u8(0x0104, "WRAM"))
+			if scene_changed == true then return true end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "WRAM" end,
 		p1livesaddr=function() return 0x024C end,
 		maxlives=function() return 5 end,
 		ActiveP1=function() return true end, -- p1 is always active!
+		grace=60, -- this also helps avoid a double-swap on a death from falling; if you fall, health drops to 0 about 33 frames later
 	},
 	['Titenic_NES']={ -- Titenic (bootleg), NES
 		func=singleplayer_withlives_swap,

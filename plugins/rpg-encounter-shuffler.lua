@@ -17,8 +17,7 @@ plugin.description =
 [[
 	This is the prototype of an offshoot of the Damage Shuffler, made to allow for adding RPGs to the logic.
 	Right now it only supports swapping on hitting a random encounter, but more logic is planned.
-	Currently supports FF3 US and FF2 US, will add many more games as time goes on.
-
+	Currently supports arbitrary versions of Final Fantasy 1-9, will add many more games as time goes on.
 ]]
 
 local NO_MATCH = 'NONE'
@@ -42,7 +41,7 @@ local function checkRandomSwap(settings)
 	if settings.BaseSwapChance ~= 100 and swap_chance < 100 then
 		if math.random(100) >= swap_chance then 
 			swap_chance = settings.SwapChanceIncrease and (swap_chance + settings.SwapChanceIncreaseAmount) or swap_chance
-			log_console('Current Swap Chance: ' .. swap_chance)
+			--log_console('Current Swap Chance: ' .. swap_chance)
 			return false
 			-- don't swap
 		end
@@ -66,6 +65,7 @@ end
 local function encounter_swap(gamemeta)
 	return function()
 		local encounterChanged, curInEncounter = update_prev('encounterStatus', gamemeta.inEncounter())
+		--gamemeta.logfunc()
 		return encounterChanged and curInEncounter
 	end
 end
@@ -81,42 +81,59 @@ local gamedata = {
 	['FF1_NES']={ -- Final Fantasy 1 NES
 		func=encounter_swap,
 		inEncounter=function() return memory.read_u8(0x0081, "RAM") == 0x063 end, --TODO:
-		--logfunc=function() log_console('ff1 memory: ' .. memory.read_u16_le(0x000684, "WRAM")) end,
 	},
 	['FF2_NES']={ -- Final Fantasy 2 NES
 		func=ff2nes_swap,
 		transitionCounter=function() return memory.read_u8(0x008C, "RAM") end, --TODO:
-		--[[logfunc=function()
-			if(curValue ~= nil and prevValue ~= nil) then
-			 log_console('ff2 memory: ' .. memory.read_u8(0x008C, "RAM") .. ' curValue: ' .. curValue .. ' prevValue: ' .. prevValue)
-			end
-		end,]]
 	},
 	['FF3_NES']={ -- Final Fantasy 3 NES
 		func=encounter_swap,
 		inEncounter=function() return memory.read_u8(0x0001, "RAM") == 0x0001 end, --TODO:Fix Swap when starting credits sequence
-		--logfunc=function() log_console('ff3 memory: ' .. memory.read_u16_le(0x000684, "WRAM")) end,
 	},
 	['FF4_SNES']={ -- Final Fantasy 4 SNES
 		func=encounter_swap,
 		inEncounter=function() return memory.read_u16_le(0x116e0, "WRAM") == 0x0100 end, --TODO: Look for logic that swaps when battle starts (after zoom-in, ideally during black screen)
-		--logfunc=function() log_console('ff4 memory: ' .. memory.read_u16_le(0x000684, "WRAM")) end,
 	},
 	['FF5_GBA']={ -- Final Fantasy 5 GBA
 		func=encounter_swap,
-		--inEncounter=function() return memory.read_u16_le(0x0096E0, "EWRAM") == 0x0011 end, --TODO: Try transition from 0x0011 -> 0x000A
 		inEncounter=function() return memory.read_u8(0x96E0, "EWRAM") == 0x0011 end, --TODO: Try transition from 0x0011 -> 0x000A
-		--logfunc=function() log_console('ff5 memory: ' .. memory.read_u8(0x96E0, "EWRAM")) end,
 	},
 	['FF6_SNES']={ -- Final Fantasy 6 SNES
 		func=encounter_swap,
 		inEncounter=function() return memory.read_u16_le(0x000054, "WRAM") == 0xFF00 end,
-		--logfunc=function() log_console('ff6 memory: ' .. memory.read_u16_le(0x000054, "WRAM")) end,
 	},
+	['FF7_PSX']={ -- Final Fantasy 7 PSX
+		func=encounter_swap,
+		inEncounter=function() return memory.read_u8(0x062FF9, "MainRAM") == 0x001 end,
+	},
+	['FF8_PSX']={ -- Final Fantasy 8 PSX
+		func=encounter_swap,
+		inEncounter=function() return memory.read_u16_le(0x0BD990, "MainRAM") == 0x3021 end,
+	},
+	['FF9_PSX']={ -- Final Fantasy 9 PSX
+		func=encounter_swap,
+		inEncounter=function() return memory.read_u16_le(0x0BD990, "MainRAM") == 0x102B end,
+	},
+	
 
 }
 
 local backupchecks = {
+	['FF7_PSX']={ --FF7_PSX (Final Fantasy VII.xml using BizHawk's CD Bundler)
+		logfunc= function() return gameinfo.getromname() end,
+		test=function() return gameinfo.getromname() == 'Final Fantasy VII'	end,
+		tag='FF7_PSX'
+	},
+	['FF8_PSX']={ --FF8_PSX (Final Fantasy VIII.xml using BizHawk's CD Bundler)
+		logfunc= function() return gameinfo.getromname() end,
+		test=function() return gameinfo.getromname() == 'Final Fantasy VIII' end,
+		tag='FF8_PSX'
+	},
+	['FF9_PSX']={ --FF9_PSX (Final Fantasy IX.xml using BizHawk's CD Bundler)
+		logfunc= function() return gameinfo.getromname() end,
+		test=function() return gameinfo.getromname() == 'Final Fantasy IX' end,
+		tag='FF9_PSX'
+	},
 }
 
 local function get_game_tag()
@@ -128,8 +145,11 @@ local function get_game_tag()
 
 	-- check to see if any of the rom name samples match
 	local name = gameinfo.getromname()
+	log_console(name)
 	for _,check in pairs(backupchecks) do
+		check.logfunc()
 		if check.test() then
+			log_console("got through the check")
 			return check.tag
 		end
 	end

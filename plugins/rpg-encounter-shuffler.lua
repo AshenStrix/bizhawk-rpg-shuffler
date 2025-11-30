@@ -92,7 +92,7 @@ local gamedata = {
 	},
 	['FF4_SNES']={ -- Final Fantasy 4 SNES
 		func=encounter_swap,
-		inEncounter=function() return memory.read_u16_le(0x116e0, "WRAM") == 0x0100 end, --TODO: Look for logic that swaps when battle starts (after zoom-in, ideally during black screen)
+		inEncounter=function() return memory.read_u16_le(0x000684, "WRAM") == 0x0100 end, --TODO: Look for logic that swaps when battle starts (after zoom-in, ideally during black screen)
 	},
 	['FF5_GBA']={ -- Final Fantasy 5 GBA
 		func=encounter_swap,
@@ -108,7 +108,7 @@ local gamedata = {
 	},
 	['FF8_PSX']={ -- Final Fantasy 8 PSX
 		func=encounter_swap,
-		inEncounter=function() return memory.read_u16_le(0x0BD990, "MainRAM") == 0x3021 end,
+		inEncounter=function() return memory.read_u16_le(0x0DD6CC, "MainRAM") == 0x3021 end,
 	},
 	['FF9_PSX']={ -- Final Fantasy 9 PSX
 		func=encounter_swap,

@@ -6634,6 +6634,17 @@ local gamedata = {
 		p1gethp=function() return 1 end,
 		p1getlc=function() return memory.read_s8(0x0168, "WRAM") end,
 		maxhp=function() return 1 end,
+		swap_exceptions=function()
+			-- when you beat Super Doh in level 99, lives count down and add to your score
+			-- don't shuffle if you are on that level and Super Doh has no health left
+			if memory.read_u8(0x0154, "WRAM") == 98 -- level 99
+				-- HP of left arm, right arm, body
+				and memory.read_u8(0x0C41, "WRAM") == 0 and memory.read_u8(0x0C43, "WRAM") == 0 and memory.read_u8(0x0C45, "WRAM") == 0
+			then 
+				return true
+			end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "WRAM" end,
 		p1livesaddr=function() return 0x0168 end,

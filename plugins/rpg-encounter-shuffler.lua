@@ -80,7 +80,7 @@ end
 local gamedata = {
 	['FF1_NES']={ -- Final Fantasy 1 NES
 		func=encounter_swap,
-		inEncounter=function() return memory.read_u8(0x0081, "RAM") == 0x063 end, --TODO:
+		inEncounter=function() return memory.read_u8(0x0081, "RAM") == 0x068 end, --TODO:
 	},
 	['FF2_NES']={ -- Final Fantasy 2 NES
 		func=ff2nes_swap,

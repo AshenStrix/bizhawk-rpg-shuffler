@@ -8131,7 +8131,7 @@ local gamedata = {
 			if game_over_changed and game_over_curr == true then return true end
 			return false 
 		end,
-		grace=60, -- iframes are very short, easy to get shot repeatedly on swapping in
+		grace=90, -- you get about 16 iframes total, sometimes a couple more. It's easy to get shot repeatedly on swapping in
 	},
 }
 

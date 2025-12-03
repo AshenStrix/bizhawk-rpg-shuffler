@@ -6681,7 +6681,7 @@ local gamedata = {
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "Work Ram High" end,
 		p1livesaddr=function() return 0x061575 end, -- story continues
-		maxlives=function() return 3 end,
+		maxlives=function() return 1 end,
 		ActiveP1=function() return true end, -- p1 is always active!
 	},
 	['Sonic1_GEN']={ -- Sonic the Hedgehog (Genesis/Mega Drive)

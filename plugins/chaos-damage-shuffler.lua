@@ -8038,12 +8038,18 @@ local gamedata = {
 		func=singleplayer_withlives_swap,
 		-- 0xfdb6 and 0xfdb7 are P2 and P1 states: 0x00=Inactive, 0x01=Playing, 0x02=Continue, 0x03=Game Over
 		gmode=function() 
-			local p1state = memory.read_u8(0x00FDB7, "m68000 : ram : 0x100000-0x10FFFF")
-			local p2state = memory.read_u8(0x00FDB6, "m68000 : ram : 0x100000-0x10FFFF")
-			return (p1state > 0 and p1state <= 3) or (p2state > 0 and p2state <= 3)
+			local p1state = memory.read_s8(0x00FDB7, "m68000 : ram : 0x100000-0x10FFFF")
+			local p2state = memory.read_s8(0x00FDB6, "m68000 : ram : 0x100000-0x10FFFF")
+			local level   = memory.read_s8(0x000281, "m68000 : ram : 0x100000-0x10FFFF")
+			return level ~= -1 and ((p1state > 0 and p1state <= 3) or (p2state > 0 and p2state <= 3))
 		end,
-		p1gethp=function() return memory.read_s8(0x0005E7, "m68000 : ram : 0x100000-0x10FFFF") end, -- slug health
-		p1getlc=function() return memory.read_u8(0x000377, "m68000 : ram : 0x100000-0x10FFFF") end,
+		p1gethp=function()
+			-- 0x0005E7: slug health
+			local swap_on_slug_damage = false -- if you want to swap when the slug (tank) is damaged, set this to true
+			if swap_on_slug_damage ~= true then return 0 end
+			return memory.read_s8(0x0005E7, "m68000 : ram : 0x100000-0x10FFFF")
+		end, 
+		p1getlc=function() return memory.read_s8(0x000377, "m68000 : ram : 0x100000-0x10FFFF") end,
 		maxhp=function() return 48 end,
 		minhp=-1;
 		CanHaveInfiniteLives=true,

@@ -3583,8 +3583,11 @@ local gamedata = {
 		-- checking for iframes to not swap on devil soul use etc
 		func=iframe_health_swap,
 		is_valid_gamestate=function() return memory.read_u8(0x0C07E8, "Main RAM") == 2 end,
-		-- hopefully this works for julius/boss rush mode too, bizhawk won't let me import saves for ds games
-		get_iframes=function() return memory.read_u8(0x0CA9F3, "Main RAM") end,
+			-- 0x0CA9F3: iframes
+			-- 0x0CA94A: pops up to 1 at times for using certain moves but also works like iframes for spikes
+				-- with non-spike damage, pops up to nearly the same number as 0x0CA9F3 (offset by 1) and counts down simultaneously
+		get_iframes=function() return memory.read_u8(0x0CA9F3, "Main RAM") + memory.read_u8(0x0CAA24, "Main RAM") end,
+		iframe_minimum=function() return 2 end,
 		get_health=function() return memory.read_u16_le(0x0F7410, "Main RAM") end,
 		other_swaps=function() return false end,
 		grace=60,

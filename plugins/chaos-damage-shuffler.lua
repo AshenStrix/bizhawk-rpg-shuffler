@@ -6144,9 +6144,10 @@ local gamedata = {
 	},
 	['Ristar_GEN']={ -- Ristar, Genesis
 		func=singleplayer_withlives_swap,
+		gmode=function() return memory.read_u16_be(0xea02, "68K RAM") == 4 or memory.read_u16_be(0xea02, "68K RAM") == 5 end, -- level is loading from 0 to 3, controllable at 5
 		p1gethp=function() return memory.read_u8(0xc038, "68K RAM") end,
 		p1getlc=function() return memory.read_u8(0xe578, "68K RAM") end,
-		maxhp=function() return 32 end,
+		maxhp=function() return 4 end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "68K RAM" end,
 		p1livesaddr=function() return 0xe578 end,

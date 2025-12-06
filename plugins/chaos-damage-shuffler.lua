@@ -5565,6 +5565,7 @@ local gamedata = {
 		LivesWhichRAM=function() return "RAM" end,
 		maxlives=function() return 69 end,
 		ActiveP1=function() return true end, -- p1 is always active!
+		grace=100, -- approx 60 frames from knockback/iframes until vulnerable again
 	},
 	['NinjaGaiden2_NES']={ -- Ninja Gaiden II, NES
 		func=singleplayer_withlives_swap,
@@ -5576,6 +5577,7 @@ local gamedata = {
 		LivesWhichRAM=function() return "RAM" end,
 		maxlives=function() return 9 end,
 		ActiveP1=function() return true end, -- p1 is always active!
+		grace=100, -- approx 90 frames from knockback/iframes until vulnerable again
 	},
 	['NinjaGaiden3_NES']={ -- Ninja Gaiden III, NES
 		func=singleplayer_withlives_swap,
@@ -5587,6 +5589,7 @@ local gamedata = {
 		LivesWhichRAM=function() return "RAM" end,
 		maxlives=function() return 9 end,
 		ActiveP1=function() return true end, -- p1 is always active!
+		grace=100, -- approx 60 frames from knockback/iframes until vulnerable again
 	},
 	['BuckyOHare_NES']={ -- Bucky O'Hare, NES
 		func=singleplayer_withlives_swap,

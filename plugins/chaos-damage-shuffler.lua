@@ -7236,7 +7236,9 @@ local gamedata = {
 		func=health_swap,
 		get_health=function() return mainmemory.read_u8(0x2B1) end,
 		is_valid_gamestate=function() return mainmemory.read_u8(0x2BF) == 1 and -- check that we are not in the demo (0)
-			mainmemory.read_u8(0x360) > 0 and mainmemory.read_u8(0x360) <= 0x40 end, -- check if the counter that ticks down seconds of in-game timer is running
+			mainmemory.read_u8(0x360) > 0 and mainmemory.read_u8(0x360) <= 0x40 and -- check if the counter that ticks down seconds of in-game timer is running
+			-- check if both in 6-4 and past the final Pete fight (where the timer freezes; HP changes to 1 when ending plays)
+			not (mainmemory.read_u8(0x2AB) == 6 and mainmemory.read_u8(0x2AC) == 4 and mainmemory.read_u8(0x2AD) ~= 27) end,
 		other_swaps=function() return false end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "WRAM" end,

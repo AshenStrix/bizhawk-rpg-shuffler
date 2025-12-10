@@ -6222,6 +6222,16 @@ local gamedata = {
 		p1gethp=function() return memory.read_u8(0x0112, "RAM") end,
 		p1getlc=function() return memory.read_s8(0x0117, "RAM") end,
 		maxhp=function() return 44 end,
+		swap_exceptions=function()
+		-- lives will get reset to 3 on completing dungeon areas, during loading
+		-- so, if you have collected lives, these will drop and you will swap
+		-- so, ignore lives/hp changes during loading screens (deaths get tallied slightly after loading)
+		-- main area and sub-areas are on the first three addresses, and 0x80 and up means they are loading
+			if memory.read_u8(0x0000, "RAM") >= 0x80 or memory.read_u8(0x0001, "RAM") >= 0x80 or memory.read_u8(0x0002, "RAM") >= 0x80
+				then return true
+			end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x0117 end,

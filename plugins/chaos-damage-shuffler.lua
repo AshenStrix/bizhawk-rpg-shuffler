@@ -7401,7 +7401,7 @@ local gamedata = {
 				local p2_wins_changed, p2_wins_curr, p2_wins_prev = update_prev("p2_wins", memory.read_u8(0x38A4, "WRAM"))
 				-- SHUFFLE CONDITIONS:
 				-- if we are on a screen where you cannot fight, for example, menus, don't swap - continue screen is fine
-				if memory.read_u8(0x3A7E, "WRAM") > 0x09 and not memory.read_u8(0x3A7E, "WRAM") == 0x0F then return false end
+				if memory.read_u8(0x3A7E, "WRAM") > 0x09 and not (memory.read_u8(0x3A7E, "WRAM") == 0x0F) then return false end
 				-- if p2 just won round 1, or has 2 wins and the match rolls over to the continue screen, then swap
 				-- but don't swap right on winning their second match, to avoid doubles
 				if (p2_wins_curr == 2 and p2_wins_prev == 1) then return false end

@@ -7179,14 +7179,31 @@ local gamedata = {
 	},
 	['WildGuns_SNES']={ -- Wild Guns, SNES
 		func=singleplayer_withlives_swap,
+		-- only swap during gameplay, not for demo/options
+		gmode=function() return memory.read_u8(0x0410, "WRAM") < 4 end,
 		p1gethp=function() return 1 end,
 		p1getlc=function() return memory.read_u8(0x1fb2, "WRAM") end,
 		maxhp=function() return 1 end,
-		CanHaveInfiniteLives=false,
-		LivesWhichRAM=function() return "WRAM" end,
-		p1livesaddr=function() return 0x1fb2 end,
-		maxlives=function() return 5 end,
-		ActiveP1=function() return true end, -- p1 is always active!
+		swap_exceptions=function()
+		-- if level complete or ending music has been called, don't swap
+		-- this will prevent extra lives ticking down in final tally from swapping
+			local _, bonus_ending_curr = update_prev("bonus_ending", (memory.read_u8(0x0120, "WRAM") == 0x0D or memory.read_u8(0x0120, "WRAM") == 0x10))
+			if bonus_ending_curr == true then return true end
+			return false
+		end,
+		other_swaps=function()
+		-- when game over music is called, swap
+		-- gmode will prevent this from happening just because you play it in the sound test
+			local game_over_changed, game_over_curr = update_prev("game_over", memory.read_u8(0x0120, "WRAM") == 0x0F)
+			if game_over_changed and game_over_curr == true then return true end
+			return false
+		end,
+		-- Wild Guns has infinite continues; un-comment these lines if infinite lives are preferred
+		-- CanHaveInfiniteLives=true, 
+		-- LivesWhichRAM=function() return "WRAM" end,
+		-- p1livesaddr=function() return 0x1fb2 end,
+		-- maxlives=function() return 5 end,
+		-- ActiveP1=function() return true end, -- p1 is always active!
 	},
 	['SuperSmashTV_SNES']={ -- Super Smash T.V., SNES
 		func=singleplayer_withlives_swap,

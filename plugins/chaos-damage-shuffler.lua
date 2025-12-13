@@ -1522,7 +1522,7 @@ local function sotn_swap(gamemeta)
 
 		if ((health_changed and health_curr < health_prev) -- health went down
 				or (gamemeta.stone_state and state_changed and state_curr == gamemeta.stone_state)) -- 0 damage, but player was petrified
-			and iframes_changed and iframes_prev == 0 -- I-frames went up (i.e.: it isn't water)
+			and iframes_changed and iframes_curr > iframes_prev -- I-frames went up (i.e.: it isn't water)
 			and health_curr > min_health -- We didn't just die (delay until the game over check passes)
 		then
 			return true
@@ -4466,6 +4466,7 @@ local gamedata = {
 			return gamestate == 2 -- Gameplay
 				or gamestate == 3 -- Game Over
 		end,
+		grace=90,
 	},
 	['SOTN_PS1_2']={ -- Japan (1.2), Europe and Asia releases
 		func=sotn_swap,
@@ -4487,6 +4488,7 @@ local gamedata = {
 			return gamestate == 2 -- Gameplay
 				or gamestate == 3 -- Game Over
 		end,
+		grace=90,
 	},
 	['SOTN_SATURN']={ -- Akumajou Dracula X: Gekka no Yasoukyoku (Saturn)
 		func=sotn_swap,
@@ -4508,6 +4510,7 @@ local gamedata = {
 				return false -- Gameplay
 			end
 		end,
+		grace=90,
 	},
 	['CV64_JPN_N64']={
 		func=castlevania_n64_swap,

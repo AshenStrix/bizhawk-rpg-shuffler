@@ -6233,9 +6233,13 @@ local gamedata = {
 		swap_exceptions=function()
 		-- lives will get reset to 3 on completing dungeon areas, during loading
 		-- so, if you have collected lives, these will drop and you will swap
+		-- HP also gets set to the base of 6 (3 full hearts) on starting Chapter 4 
+		-- (and possibly future chapters? there is no combat in Chapter 4)
+		-- this hp reset would swap you if you have health > 6 on completing the prior chapter
 		-- so, ignore lives/hp changes during loading screens (deaths get tallied slightly after loading)
 		-- main area and sub-areas are on the first three addresses, and 0x80 and up means they are loading
-			if memory.read_u8(0x0000, "RAM") >= 0x80 or memory.read_u8(0x0001, "RAM") >= 0x80 or memory.read_u8(0x0002, "RAM") >= 0x80
+			local loading_changed, loading_curr = update_prev("loading", memory.read_u8(0x0000, "RAM") >= 0x80 or memory.read_u8(0x0001, "RAM") >= 0x80 or memory.read_u8(0x0002, "RAM") >= 0x80)
+			if loading_changed or loading_curr
 				then return true
 			end
 			return false

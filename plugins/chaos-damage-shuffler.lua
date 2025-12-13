@@ -3585,10 +3585,14 @@ local gamedata = {
 		func=iframe_health_swap,
 		is_valid_gamestate=function() return memory.read_u8(0x0C07E8, "Main RAM") == 2 end,
 			-- 0x0CA9F3: iframes
-			-- 0x0CA94A: pops up to 1 at times for using certain moves but also works like iframes for spikes
-				-- with non-spike damage, pops up to nearly the same number as 0x0CA9F3 (offset by 1) and counts down simultaneously
-		get_iframes=function() return memory.read_u8(0x0CA9F3, "Main RAM") + memory.read_u8(0x0CAA24, "Main RAM") end,
-		iframe_minimum=function() return 2 end,
+			-- 0x0CA9F4: also acts like iframes; noted on damage by Aguni (getting hit by downward dive, also some side movement)
+			-- 0x0CAA24: pops up to 1 at times for using certain moves but also works like iframes for spikes
+				-- with non-spike damage, can pop up to nearly the same number as 0x0CA9F3 (offset by 1) and count down simultaneously
+		get_iframes=function() return memory.read_u8(0x0CA9F3, "Main RAM") -- "normal" iframes
+			+ memory.read_u8(0x0CA9F4, "Main RAM") 
+			+ memory.read_u8(0x0CAA24, "Main RAM")
+		end,
+		iframe_minimum=function() return 1 end,
 		get_health=function() return memory.read_u16_le(0x0F7410, "Main RAM") end,
 		other_swaps=function() return false end,
 		grace=60,

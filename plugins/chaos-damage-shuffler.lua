@@ -338,6 +338,7 @@ plugin.description =
 	- Thank you to kalimag for work that made infinite lives persist through your final game!
 	- Infinite lives do not activate for the second player on NES Clinger-Winger on an unpatched ROM, since P2 can't move. Use the patch if you want two-player Clinger-Winger for some reason!
 	- Several games do not have 'lives' to make infinite, such as Anticipation, Super Metroid, A Link to the Past, and others. Nothing will change in these games with this option.
+	- ADVANCED: To override individual games (for example, to turn OFF infinite lives for a given game): find #TO_OVERRIDE_INFINITE_LIVES in this plugin and consult the example.
 
 	Auto-Clinger-Winger NES: You can enable max speed and auto-clear the maze (level 11).
 	-- You MUST use an unpatched ROM for this option to activate. The second player will not be able to move, so only Rash can get to the boss in 2p. Infinite Lives will be disabled for the second player in this scenario to prevent a softlock.
@@ -7198,12 +7199,12 @@ local gamedata = {
 			if game_over_changed and game_over_curr == true then return true end
 			return false
 		end,
-		-- Wild Guns has infinite continues; un-comment these lines if infinite lives are preferred
-		-- CanHaveInfiniteLives=true, 
-		-- LivesWhichRAM=function() return "WRAM" end,
-		-- p1livesaddr=function() return 0x1fb2 end,
-		-- maxlives=function() return 5 end,
-		-- ActiveP1=function() return true end, -- p1 is always active!
+		-- Wild Guns has infinite continues; infinite lives has been set to false by default for difficulty purposes
+		CanHaveInfiniteLives=false, 
+		LivesWhichRAM=function() return "WRAM" end,
+		p1livesaddr=function() return 0x1fb2 end,
+		maxlives=function() return 5 end,
+		ActiveP1=function() return true end, -- p1 is always active!
 	},
 	['SuperSmashTV_SNES']={ -- Super Smash T.V., SNES
 		func=singleplayer_withlives_swap,

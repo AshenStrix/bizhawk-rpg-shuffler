@@ -8727,4 +8727,23 @@ if type(tonumber(which_level)) == "number" then
 	end
 end
 
+-- #TO_OVERRIDE_INFINITE_LIVES
+-- Typically, if a game can give you infinite lives, CanHaveInfiniteLives will be set to true.
+-- You can override this for as many individual games as you want.
+-- To turn off infinite lives in a game, use its tag here (in this example, Ninja Gaiden 1) like so, but without the double hyphens that comment these out:
+
+-- gamedata['NinjaGaiden1_NES'].CanHaveInfiniteLives = false
+
+-- Some games can handle infinite lives but will have them turned off by default, for balance/difficulty purposes.
+-- Example: Wild Guns (SNES)
+-- To override this, write a line like so, without the double hyphens:
+
+-- gamedata['WildGuns_SNES'].CanHaveInfiniteLives = true
+
+-- You can simply un-comment the above line (remove the double hyphens) for Wild Guns specifically.
+-- Note that, if a game is not programmed to give infinite lives, setting its CanHaveInfiniteLives to true here won't do anything.
+
+-- FINAL NOTE: BEFORE UPDATING YOUR PLUGIN, COPY-PASTE THE LINES YOU ADD HERE TO SOMEWHERE SAFE, SO YOU CAN RE-ADD THEM
+-- this concludes #TO_OVERRIDE_INFINITE_LIVES
+
 return plugin

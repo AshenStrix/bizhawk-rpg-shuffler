@@ -6954,17 +6954,16 @@ local gamedata = {
 		grace=30,
 	}, 
 	['ViceProjectDoom_NES']={ -- Vice: Project Doom, NES
-		func=iframe_health_swap,
-		-- we will handle deaths by tracking lives for this game, so don't shuffle if health is at 0 - wait for lives
-		is_valid_gamestate=function() return memory.read_s8(0x0280, "RAM") > 0 end,
-		-- 0x0180: iframes address; 60 iframes for sidescroller, 128 for car, NONE for shootouts
-		get_iframes=function() return memory.read_u8(0x0180, "RAM") end,
-		iframe_minimum=function() return 1 end,
-		get_health=function() return memory.read_s8(0x0280, "RAM") end,
-		other_swaps=function()
-			-- need to track lives lost from deaths not due to 0 HP
-			local lives_changed, lives_curr, lives_prev = update_prev("lives", memory.read_s8(0x0362, "RAM"))
-			if lives_changed and lives_curr < lives_prev and lives_prev >= 0 then return true end
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_u8(0x0280, "RAM") end,
+		p1getlc=function() return memory.read_u8(0x0362, "RAM") end,
+		maxhp=function() return 20 end,
+		swap_exceptions=function()
+			-- for the shooting gallery levels, there are no iframes at all
+			-- you get 60 for platform levels and 127 for car levels
+			-- so, in the two shooting galleries, we'll only shuffle on deaths, not for losing HP
+			local level = memory.read_u8(0x0092, "RAM")
+			if (level == 38 or level == 40) and memory.read_u8(0x0280, "RAM") > 0 then return true end
 			return false
 		end,
 		CanHaveInfiniteLives=true,

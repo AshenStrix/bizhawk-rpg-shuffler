@@ -6239,9 +6239,11 @@ local gamedata = {
 		-- so, ignore lives/hp changes during loading screens (deaths get tallied slightly after loading)
 		-- main area and sub-areas are on the first three addresses, and 0x80 and up means they are loading
 			local loading_changed, loading_curr = update_prev("loading", memory.read_u8(0x0000, "RAM") >= 0x80 or memory.read_u8(0x0001, "RAM") >= 0x80 or memory.read_u8(0x0002, "RAM") >= 0x80)
-			if loading_changed or loading_curr
-				then return true
-			end
+			if loading_curr then return true end
+		-- the HP changes between chapters happen while you are in overhead mode, not in a dungeon.
+		-- no HP drops in overhead mode should swap you, but they need to be processed
+			local overhead_mode_changed, overhead_mode_curr = update_prev("overhead_mode", memory.read_u8(0x0048, "RAM") >= 0x80)
+			if overhead_mode_curr then return true end
 			return false
 		end,
 		CanHaveInfiniteLives=true,

@@ -392,6 +392,11 @@ local gamedata = {
 		maxhp=function() return memory.read_u8(0x1384, "WRAM") end,
 	},
 	['mmx2gbc']={ -- Mega Man Xtreme 2 GBC
+		-- if you are in actual gameplay, this frame counter will be running to time you
+		gmode=function()
+			local frame_counter_changed = update_prev("frame_counter", memory.read_u8(0x009C, "WRAM"))
+			return frame_counter_changed
+		end,
 		gethp=function() return bit.band(memory.read_u8(0x0121, "WRAM"), 0x7F) end,
 		getlc=function() return memory.read_s8(0x0065, "WRAM") end,
 		-- Prevent shuffle on selecting Retry. Lives go from 0 to 255 on losing your last life, then "drop" from 255 to 2 on starting again.
@@ -401,15 +406,6 @@ local gamedata = {
 			local character_changed = update_prev("character", memory.read_u8(0x00C9, "WRAM"))
 			-- X and Zero might have different HP; prevent swaps if swapping in a character with less HP
 			if character_changed then 
-				return true
-			end
-			local menu_selection = memory.read_u8(0x0A6A, "WRAM")
-			-- This address holds your selection on the opening screen.
-			-- 0 == Extreme Mode, 1 = X, 2 = Zero, 3 = Continue, 4 = Options, 5 = Boss Attack
-			-- If you go to the Options screen (4) or enter Boss Attack mode, lives will drop to 0
-			-- because you get no extra lives in Boss Attack.
-			-- So, we should never swap until being outside of selecting those modes.
-			if menu_selection == 4 or menu_selection == 5 then
 				return true
 			end
 			local maxhp_changed = update_prev("maxhp", memory.read_u8(0x0084, "WRAM"))

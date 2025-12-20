@@ -6235,7 +6235,19 @@ local gamedata = {
 		func=singleplayer_withlives_swap,
 		p1gethp=function() return memory.read_u8(0x0112, "RAM") end,
 		p1getlc=function() return memory.read_s8(0x0117, "RAM") end,
-		maxhp=function() return 44 end,
+		maxhp=function() 
+		-- your default maxhp is heart containers times 2
+		-- however, the pills in the final level overfill your health to the max value of 44 (22 hearts)
+		-- and the effect gradually wears off, eventually bringing your hp back down to your max hearts
+		-- you should NOT shuffle just because your maxhp decreased by 1 in this state
+		-- so we need to check if HP is greater than maxhp but <= 44 and adjust maxhp on the fly accordingly
+			local heartcontainers = memory.read_u8(0x0111, "RAM")
+			if memory.read_u8(0x0112, "RAM") <= 44 and memory.read_u8(0x0112, "RAM") > heartcontainers*2
+				then return memory.read_u8(0x0112, "RAM")
+			else
+				return heartcontainers*2
+			end
+		end,
 		swap_exceptions=function()
 		-- lives will get reset to 3 on completing dungeon areas, during loading
 		-- so, if you have collected lives, these will drop and you will swap
@@ -6250,6 +6262,19 @@ local gamedata = {
 		-- no HP drops in overhead mode should swap you, but they need to be processed
 			local overhead_mode_changed, overhead_mode_curr = update_prev("overhead_mode", memory.read_u8(0x0048, "RAM") >= 0x80)
 			if overhead_mode_curr then return true end
+			return false
+		end,
+		other_swaps=function()
+		-- if your health is overcharged due to the pills in the final level, your health will gradually tick down, 1 hp at a time
+		-- until you reach your actual maxhp (based on heart containers)
+		-- you should shuffle if hp drops by > 1 in this state,
+		-- as anything that can hit you at that point in the game will do more than 1 hp of damage
+		-- also, check the frame after the damage is done, just to be sure that swaps occur if you drop down to at/below your usual maxhp (no longer overcharged)
+			local is_hp_overcharged_changed, is_hp_overcharged_curr = update_prev("is_hp_overcharged", (memory.read_u8(0x0112, "RAM") > memory.read_u8(0x0111, "RAM")*2 and memory.read_u8(0x0112, "RAM") <= 44))
+			if is_hp_overcharged_changed == true or is_hp_overcharged_curr == true then
+				local overcharged_hp_changed, overcharged_hp_curr, overcharged_hp_prev = update_prev("overcharged_hp", memory.read_u8(0x0112, "RAM"))
+				if overcharged_hp_changed == true and overcharged_hp_curr < overcharged_hp_prev - 1 then return true end
+			end
 			return false
 		end,
 		CanHaveInfiniteLives=true,

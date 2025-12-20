@@ -5624,6 +5624,17 @@ local gamedata = {
 	},
 	['KabukiQuantumFighter_NES']={ -- Kabuki Quantum Fighter, NES
 		func=singleplayer_withlives_swap,
+		gmode=function()
+			-- end of level, ticks down time to 000, then health
+			-- in the ending, lives tick down but timer is also all zeroes
+			-- if timer is all zeros, we are not in active gameplay
+			-- side effect: on continuing after a time up, you'll be swapped on starting the timer for the level
+			-- rather than right after dying
+			-- this is acceptable
+			if (memory.read_u8(0x691, "RAM") == 0 and memory.read_u8(0x692, "RAM") == 0 and
+				memory.read_u8(0x693, "RAM")) then return false end
+			return true
+		end,
 		p1gethp=function() return memory.read_s8(0x68c, "RAM") end,
 		p1getlc=function() return memory.read_s8(0x6c0, "RAM") end,
 		maxhp=function() return 15 end,
@@ -5631,22 +5642,17 @@ local gamedata = {
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x6c0 end,
 		maxlives=function() return 9 end,
-		ActiveP1=function() return true end, -- p1 is always active!
+		ActiveP1=function()
+		-- p1 should only get lives refilled if we're in gameplay
+		-- definitely not in the ending, where the lives count down
+		-- lives will still refill if you get hit after a timeup, though HUD does not always update
+			return (memory.read_u8(0x691, "RAM") == 0 and memory.read_u8(0x692, "RAM") == 0 and
+				memory.read_u8(0x693, "RAM") == 0) == false
+		end,
 		swap_exceptions=function()
-			-- end of level, ticks down time, then health
-			-- if timer is all zeros, and you didn't lose a life from time up, don't swap
-			-- health ticks down every 12 frames, but waiting for this eats into the 100 iframes you get on hit
-			-- (and reaction time to avoid pitfalls and the like on swapping back in)
-			-- so we just code an exception for end of level instead of using delay, to give more reaction time
-			local lives_changed = update_prev ("lives", memory.read_s8(0x6c0, "RAM"))
-			if 
-				(memory.read_u8(0x691, "RAM") == 0 and memory.read_u8(0x692, "RAM") == 0 and
-				memory.read_u8(0x693, "RAM") == 0 and not lives_changed)
-				or
-				(memory.read_u8(0x355, "RAM") == 0x80) -- we are on the pause menu; you can trade hp and chips for each other during boss fights
-			then
-				return true
-			end
+		-- if paused during boss fights, on the pause menu, you can trade hp and chips for each other
+		-- this is intentional, not damage, so don't swap
+			if (memory.read_u8(0x355, "RAM") == 0x80) then return true end
 			return false
 		end,
 	},

@@ -1,7 +1,7 @@
 local plugin = {}
 
 plugin.name = "RPG Encounter Shuffler"
-plugin.author = "authorblues and kalimag (MMDS), Phiggle, Rogue_Millipede, Shadow Hog, expeditedDelivery, Smight, endrift, ZoSym, Extreme0, L Thammy (Chaos Damage Shuffler), AshenStrix"
+plugin.author = "authorblues and kalimag (MMDS), Phiggle, Rogue_Millipede, Shadow Hog, expeditedDelivery, Smight, endrift, ZoSym, Extreme0, L Thammy (Chaos Damage Shuffler), AshenStrix (RPG Shuffler)"
 plugin.minversion = "2.6.3"
 plugin.settings =
 {
@@ -11,6 +11,7 @@ plugin.settings =
 	{ name='BaseSwapChance', type='number', label="Percent chance, increasing linearly, of an encounter triggering a swap", default=100},
 	{ name='SwapChanceIncrease', type='boolean', label="Increase chance with every suppressed swap", default=true},
 	{ name='SwapChanceIncreaseAmount', type='number', label="Percent to increment swap chance with each encounter", default=5},
+	{ name='WriteSwapChanceToFile', type='boolean', label="Write current swap chance to a file for display", default=false},
 }
 
 plugin.description =
@@ -23,7 +24,8 @@ plugin.description =
 local NO_MATCH = 'NONE'
 
 -- debugging settings
-local PAUSE_ON_SWAP = false -- pause whenever a swap would occur
+local PAUSE_ON_SWAP = false -- pause whenever a swap is scheduled
+local PAUSE_AFTER_DELAY = false -- pause when a swap would occur after the frame delay
 
 local tags = {}
 local tag
@@ -35,18 +37,24 @@ local shouldSwap
 local prev_framecount
 local swap_chance
 
+
 --returns true if the die roll determines we should still swap if the swap requirements are met, then increases the chance if it fails
 --if it succeeds, resets the swap chance
 local function checkRandomSwap(settings)
 	if settings.BaseSwapChance ~= 100 and swap_chance < 100 then
 		if math.random(100) >= swap_chance then 
 			swap_chance = settings.SwapChanceIncrease and (swap_chance + settings.SwapChanceIncreaseAmount) or swap_chance
-			--log_console('Current Swap Chance: ' .. swap_chance)
+			if settings.WriteSwapChanceToFile then
+				write_data('output-info/swap-chance.txt', swap_chance)
+			end
 			return false
 			-- don't swap
 		end
 	end
-	swap_chance = settings.SwapChance
+	swap_chance = settings.BaseSwapChance
+	if settings.WriteSwapChanceToFile then
+		write_data('output-info/swap-chance.txt', swap_chance)
+	end
 	return true
 end
 
@@ -65,8 +73,9 @@ end
 local function encounter_swap(gamemeta)
 	return function()
 		local encounterChanged, curInEncounter = update_prev('encounterStatus', gamemeta.inEncounter())
+		local allowSwap = gamemeta.allow_swap()
 		--gamemeta.logfunc()
-		return encounterChanged and curInEncounter
+		return (encounterChanged and curInEncounter and allowSwap), (gamemeta.frameDelay and gamemeta.frameDelay())
 	end
 end
 
@@ -80,39 +89,59 @@ end
 local gamedata = {
 	['FF1_NES']={ -- Final Fantasy 1 NES
 		func=encounter_swap,
-		inEncounter=function() return memory.read_u8(0x0081, "RAM") == 0x068 end, --TODO:
+		inEncounter=function() return memory.read_u8(0x0081, "RAM") == 0x068 end, --TODO: Find earlier swap
+		allow_swap=function() return true end,
 	},
 	['FF2_NES']={ -- Final Fantasy 2 NES
 		func=ff2nes_swap,
-		transitionCounter=function() return memory.read_u8(0x008C, "RAM") end, --TODO:
+		transitionCounter=function() return memory.read_u8(0x008C, "RAM") end, --TODO: Test small delay, probably fine though
 	},
+	['FF1_2_GBA']={ -- Final Fantasy 1 & 2: Dawn of Souls GBA
+		func=encounter_swap,
+		inEncounter=function() return memory.read_u8(0x0000, "EWRAM") == 0x0001 end, --TODO:
+		allow_swap=function() return memory.read_u32_le(0x2384, "EWRAM") ~= 0x01010101 end,
+		logfunc=function() log_console(memory.read_u32_le(0x2384, "EWRAM")) end,
+		frameDelay=function() return memory.read_u8(0x2388, "EWRAM") == 0x00FF and 3 or 80 end,
+	},	
 	['FF3_NES']={ -- Final Fantasy 3 NES
 		func=encounter_swap,
-		inEncounter=function() return memory.read_u8(0x0001, "RAM") == 0x0001 end, --TODO:Fix Swap when starting credits sequence
+		inEncounter=function() return memory.read_u8(0x0001, "RAM") == 0x0001 end, --TODO:Fix Swap when starting credits sequence, find earlier swap point while at it (maybe, probably fine)
+		allow_swap=function() return true end,
 	},
 	['FF4_SNES']={ -- Final Fantasy 4 SNES
 		func=encounter_swap,
-		inEncounter=function() return memory.read_u16_le(0x000684, "WRAM") == 0x0100 end, --TODO: Look for logic that swaps when battle starts (after zoom-in, ideally during black screen)
+		inEncounter=function() return memory.read_u16_le(0x000684, "WRAM") == 0x0100 end, --TODO:
+		allow_swap=function() return true end,
+		frameDelay=function() return 80 end,
 	},
 	['FF5_GBA']={ -- Final Fantasy 5 GBA
 		func=encounter_swap,
 		inEncounter=function() return memory.read_u8(0x96E0, "EWRAM") == 0x0011 end, --TODO: Try transition from 0x0011 -> 0x000A
+		allow_swap=function() return true end,
+		frameDelay=function() return 80 end,
 	},
 	['FF6_SNES']={ -- Final Fantasy 6 SNES
 		func=encounter_swap,
 		inEncounter=function() return memory.read_u16_le(0x000054, "WRAM") == 0xFF00 end,
+		allow_swap=function() return true end,
 	},
 	['FF7_PSX']={ -- Final Fantasy 7 PSX
 		func=encounter_swap,
 		inEncounter=function() return memory.read_u8(0x062FF9, "MainRAM") == 0x001 end,
+		allow_swap=function() return true end,
+		frameDelay=function() return 200 end,
 	},
 	['FF8_PSX']={ -- Final Fantasy 8 PSX
 		func=encounter_swap,
 		inEncounter=function() return memory.read_u16_le(0x0DD6CC, "MainRAM") == 0x3021 end,
+		allow_swap=function() return true end,
+		frameDelay=function() return 150 end,
 	},
 	['FF9_PSX']={ -- Final Fantasy 9 PSX
 		func=encounter_swap,
 		inEncounter=function() return memory.read_u16_le(0x0BD990, "MainRAM") == 0x102B end,
+		allow_swap=function() return true end,
+		frameDelay=function() return 250 end,
 	},
 	
 
@@ -241,7 +270,14 @@ function plugin.on_frame(data, settings)
 				log_console('Encounter Shuffler: swap scheduled for %s (frame: %d, delay: %d)', tag, frames_since_restart, delay)
 			end
 			if PAUSE_ON_SWAP then client.pause() end
+			if PAUSE_AFTER_DELAY then next_pause_time = config.frame_count + delay end
 		end
+	end
+	if PAUSE_AFTER_DELAY then
+		 if next_pause_time and (config.frame_count >= next_pause_time) then
+			 client.pause()
+			 next_pause_time = nil
+		 end
 	end
 end
 

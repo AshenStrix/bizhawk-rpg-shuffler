@@ -8218,6 +8218,13 @@ local gamedata = {
 			return false 
 		end,
 		grace=90, -- you get about 16 iframes total, sometimes a couple more. It's easy to get shot repeatedly on swapping in
+		-- Infinite lives: there are no lives in this game
+		-- but this function can be used to refill first aid kits
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x06B9 end,
+		LivesWhichRAM=function() return "RAM" end,
+		maxlives=function() return 2 end,
+		ActiveP1=function() return true end, -- p1 is always active!
 	},
 }
 

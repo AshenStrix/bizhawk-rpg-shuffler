@@ -8219,11 +8219,14 @@ local gamedata = {
 		end,
 		grace=90, -- you get about 16 iframes total, sometimes a couple more. It's easy to get shot repeatedly on swapping in
 		-- Infinite lives: there are no lives in this game
-		-- but this function can be used to refill first aid kits
+		-- but this function can be used to refill health (Smight's preference!) or first aid kits
+		-- TODO: per-game setting
 		CanHaveInfiniteLives=true,
-		p1livesaddr=function() return 0x06B9 end,
+		p1livesaddr=function() return 0x0663 end, -- this is for infinite health
+		-- alternatively, use 0x06B9: first aid kits
 		LivesWhichRAM=function() return "RAM" end,
-		maxlives=function() return 2 end,
+		maxlives=function() return 8 end,
+		-- alternatively, use 2, for max first aid kits
 		ActiveP1=function() return true end, -- p1 is always active!
 	},
 }

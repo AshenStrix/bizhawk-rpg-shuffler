@@ -11,7 +11,7 @@
 * The plugin can run simultaneously with the Mega Man Damage Shuffler and Chaos Shuffler.
 
 ## Encounter Shuffler: Setup
-* First, [click here to download the latest version](https://github.com/AshenStrix/bizhawk-rpg-shuffler/archive/refs/heads/main.zip) of the main branch of this repo. This includes the Chaos Shuffler plugin and hash database.
+* First, [click here to download the latest version](https://github.com/AshenStrix/bizhawk-rpg-shuffler/archive/refs/heads/main.zip) of the main branch of this repo. This includes the Encounter Shuffler plugin and hash database.
 * Next, follow the **[Setup Instructions](https://github.com/authorblues/bizhawk-shuffler-2/wiki/Setup-Instructions)** by authorblues, linked right there and/or at the [main repo](https://github.com/authorblues/bizhawk-shuffler-2).
 * Finally, when you are setting up a run, **enable the Encounter Shuffler plugin** and follow the displayed instructions, including what to do with the shuffle timers.
 * Be aware that, if you are including randomizers or romhacks, you will need to add hashes to the .dat file that correspond to the game that was modified. Just copy and paste a line from the corresponding game (e.g., Final Fantasy VI for FF6 Worlds Collide), replace the original hash with yours, and save. BizHawk or the shuffler should print the SHA-1 hash if it is missing from the .dat file.

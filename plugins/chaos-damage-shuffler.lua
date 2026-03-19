@@ -156,6 +156,7 @@ plugin.description =
 	-Crash Bandicoot 4 (Bootleg) (NES), 1p
 	-Darkwing Duck (NES), 1p
 	-Demon's Crest (SNES), 1p
+	-Dick Tracy (NES), 1p
 	-Do-Re-Mi Fantasy - Milon no Dokidoki Daibouken (SNES), 1p
 	-Double Dragon 1 (NES), 1-2p, Mode A or B, shuffles on knockdown and death
 	-Double Dragon 2 (NES), 1-2p, shuffles on knockdown and death
@@ -284,6 +285,7 @@ plugin.description =
 	-Vs. Ice Climber, set IC4-4 B-1 (Arcade), 1p
 	-WarioWare, Inc.: Mega Microgame$! (GBA), 1p - bonus games including 2p are pending
 	-Wild Guns (SNES), 1p
+	-Windjammers / Flying Power Disc (Arcade), 1p
 	-Wit's (NES), 1p
 
 	NICHE ZONE
@@ -336,6 +338,7 @@ plugin.description =
 	- Thank you to kalimag for work that made infinite lives persist through your final game!
 	- Infinite lives do not activate for the second player on NES Clinger-Winger on an unpatched ROM, since P2 can't move. Use the patch if you want two-player Clinger-Winger for some reason!
 	- Several games do not have 'lives' to make infinite, such as Anticipation, Super Metroid, A Link to the Past, and others. Nothing will change in these games with this option.
+	- ADVANCED: To override individual games (for example, to turn OFF infinite lives for a given game): find #TO_OVERRIDE_INFINITE_LIVES in this plugin and consult the example.
 
 	Auto-Clinger-Winger NES: You can enable max speed and auto-clear the maze (level 11).
 	-- You MUST use an unpatched ROM for this option to activate. The second player will not be able to move, so only Rash can get to the boss in 2p. Infinite Lives will be disabled for the second player in this scenario to prevent a softlock.
@@ -585,7 +588,7 @@ local function singleplayer_withlives_swap(gamemeta)
 		end
 		
 		-- if the health goes to 0, we will rely on the life count to tell us whether to swap
-		if p1prevhp ~= nil and p1currhp < p1prevhp then
+		if p1prevhp ~= nil and p1currhp < p1prevhp and p1currhp > minhp and p1currhp < maxhp then
 			data.p1hpcountdown = gamemeta.delay or 3
 		end
 
@@ -771,11 +774,11 @@ local function twoplayers_withlives_swap(gamemeta)
 		end
 
 		-- if the health goes to 0, we will rely on the life count to tell us whether to swap
-		if p1prevhp ~= nil and p1currhp < p1prevhp then
+		if p1prevhp ~= nil and p1currhp < p1prevhp and p1currhp > minhp and p1currhp < maxhp then
 			data.p1hpcountdown = gamemeta.delay or 3
 		end
 		
-		if p2prevhp ~= nil and p2currhp < p2prevhp then
+		if p2prevhp ~= nil and p2currhp < p2prevhp and p2currhp > minhp and p2currhp < maxhp then
 			data.p2hpcountdown = gamemeta.delay or 3
 		end
 
@@ -1519,7 +1522,7 @@ local function sotn_swap(gamemeta)
 
 		if ((health_changed and health_curr < health_prev) -- health went down
 				or (gamemeta.stone_state and state_changed and state_curr == gamemeta.stone_state)) -- 0 damage, but player was petrified
-			and iframes_changed and iframes_prev == 0 -- I-frames went up (i.e.: it isn't water)
+			and iframes_changed and iframes_curr > iframes_prev -- I-frames went up (i.e.: it isn't water)
 			and health_curr > min_health -- We didn't just die (delay until the game over check passes)
 		then
 			return true
@@ -1681,32 +1684,6 @@ local function ocarina_swap(gamemeta)
 	end
 end
 
--- TODO: Not necessary anymore? Dev builds (and presumably 2.10/3.0/whatever onward) fix the byte swap that necessitated this
-local function saturn_fix_string_endianness(byteArray)
-	local byteArray2 = {}
-	
-	-- Rotate bytes
-	for i = 1, #byteArray, 2 do
-		byteArray2[i] = byteArray[i+1];
-		byteArray2[i+1] = byteArray[i];
-	end
-	-- Find the end of the string so debugging actually friggin' works
-	local endHere = 1;
-	for i = 1, #byteArray2, 1 do
-		if (byteArray2[i] == 0x00) then
-			break;
-		end
-		endHere = i;
-	end
-	-- Convert to chars
-	local charArray = {};
-	for i = 1, endHere, 1 do
-		charArray[i] = string.char(byteArray2[i]);
-	end
-	local returnString = table.concat(charArray);
-	return string.sub(returnString, 1, endHere);
-end
-
 local function Pebble_Beach_Golf_Links_swap(gamemeta)
 	return function(data)
 		-- If a swap is already scheduled, decrease it but do no further processing.
@@ -1720,20 +1697,6 @@ local function Pebble_Beach_Golf_Links_swap(gamemeta)
 			return false;
 		end
 
---		local currentPlayerChanged, currentPlayer, previousPlayer = update_prev('player', gamemeta.getCurrentPlayer());
---		local player1Changed, player1, prevPlayer1 = update_prev('player1', gamemeta.getPlayer1());
---		-- TODO: This is presumably gonna swap twice if the player was the last to go - thrice if Coffee Break happens. Really need another RAM address to check...
---		-- ALSO TODO: use prevdata to store if an empty player string was encountered. If so, ignore the next two-or-so swaps?
---		if (currentPlayerChanged) then
---			console.log(string.format("Current player changed from \"%s\" to \"%s\"", previousPlayer, currentPlayer));
---			if (previousPlayer == prevPlayer1) then
---				console.log(string.format("Previous player \"%s\" was Player 1 (\"%s\"); will be swapping", previousPlayer, prevPlayer1));
---				data.delayCountdown = gamemeta.delay;
---			else
---				console.log(string.format("Previous player \"%s\" was NOT Player 1 (\"%s\"); no swap needed", previousPlayer, prevPlayer1));
---			end;
---		end;
-
 		if (gamemeta.gmode and not gamemeta.gmode()) then
 			return false; -- Not actually in a round
 		end
@@ -1746,12 +1709,6 @@ local function Pebble_Beach_Golf_Links_swap(gamemeta)
 			update_prev('p1HoleStrokes', 0); -- Reset this now before we actually care
 		end
 		local player1ScoreArray = gamemeta.getPlayer1Scores();
-		-- Rotate bytes, because odd and even positions are swapped, IDK why, endianness doesn't usually work like this
-		--[[for i = 1, #player1ScoreArray, 2 do
-			local temp = player1ScoreArray[i];
-			player1ScoreArray[i] = player1ScoreArray[i+1];
-			player1ScoreArray[i+1] = temp;
-		end]] -- No longer necessary, dev builds (and presumably 2.10/3.0/whatever onward) fix the byte swap
 		local player1StrokesChanged, player1Strokes, prevPlayer1Strokes = update_prev('p1HoleStrokes', player1ScoreArray[hole]);
 		if (player1StrokesChanged) then
 			--console.log("P1 Strokes on hole "..hole.." has changed from "..prevPlayer1Strokes.." to "..player1Strokes);
@@ -2385,6 +2342,112 @@ local function TecmoSuperBowl_NES_swap(gamemeta)
     end
 end
 
+local function PockyRocky2_SNES_swap(gamemeta)
+	return function(data)
+		-- Pocky can be in one of three armor states
+		local pocky_states = {
+			[0x1815] = 1,
+			[0x0015] = 2, -- kimono; you revive in this state
+			[0x6D29] = 3, -- kimono + armor item
+			}
+		-- If Pocky is not in a valid state, such as on loading screens, don't swap
+		-- If timer is at 0, hold off on swaps until timer refills; this prevents double swaps (health gets drained, then life)
+		-- this is pretty much our gmode or is_valid_gamestate
+		if pocky_states[gamemeta.getpockystate()] == nil or gamemeta.gettimeup() == 0 then
+			return false
+		end
+		-- the two players work VERY DIFFERENTLY from one another in this game
+		-- P1, Pocky, is always a human player
+		-- Damage type 1: drop in armor status
+		-- Damage type 2: losing the bunny ears, which provide 1 extra HP
+		-- Damage type 3: life lost
+		local pockycurrhp   = pocky_states[gamemeta.getpockystate()]
+		local pockycurrlc   = gamemeta.getlc()
+		-- P2 can be Rocky or lots of other characters, and a human P2 can tag in/out between levels
+		-- If P2 is human, track their HP (what SHOULD be a simple value from 0 to 4, but will be worse than that)
+		local p2currhuman   = gamemeta.getp2ishuman()
+		local p2currhp      = gamemeta.getp2hp()
+		-- we need to track whether the two characters have "merged" using magic or are currently "merging/unmerging"
+		-- as changes in HP during these situations should be processed but should not swap
+		local currmerged    = gamemeta.getmerged()
+		local currmerging   = gamemeta.getmerging()
+		-- in Level 5, you ride a mount that has 3 HP, and if they lose HP, you should swap
+		local currmounthp   = gamemeta.getmounthp()
+		local currlevel     = gamemeta.getlevel()
+
+		-- retrieve previous hp/lives/merging data before backup
+		local pockyprevhp   = data.pockyprevhp
+		local pockyprevlc   = data.pockyprevlc
+		local p2prevhuman   = data.p2prevhuman
+		local p2prevhp      = data.p2prevhp
+		local prevmerged    = data.prevmerged
+		local prevmerging   = data.prevmerging
+		local prevmounthp   = data.prevmounthp
+		local prevlevel     = data.prevlevel
+
+		data.pockyprevhp    = pockycurrhp
+		data.pockyprevlc    = pockycurrlc
+		data.p2prevhuman    = p2currhuman
+		data.p2prevhp       = p2currhp
+		data.prevmerged     = currmerged
+		data.prevmerging    = currmerging
+		data.prevmounthp    = currmounthp
+		data.prevlevel      = currlevel
+
+		-- this delay ensures that when the game ticks away health for the end of a level,
+		-- we can catch its purpose and hopefully not swap, since this isnt damage related
+		if data.p1hpcountdown ~= nil and data.p1hpcountdown > 0 then
+			data.p1hpcountdown = data.p1hpcountdown - 1
+			if data.p1hpcountdown == 0 then
+				return true
+			end
+		end
+
+		if data.p2hpcountdown ~= nil and data.p2hpcountdown > 0 then
+			data.p2hpcountdown = data.p2hpcountdown - 1
+			if data.p2hpcountdown == 0 then
+				return true
+			end
+		end
+
+		if pockyprevhp ~= nil and pockycurrhp < pockyprevhp then
+			data.p1hpcountdown = gamemeta.delay or 3
+		end
+		-- if the level 5 mount's health goes to 0, we will rely on the life count to tell us whether to swap
+		-- constraining valid HP is especially important as we don't have the typical minhp or maxhp in this custom function
+		if prevmounthp ~= nil and currmounthp < prevmounthp and currmounthp > 0 and currmounthp < 4  and currlevel == 0x04 then
+			data.p1hpcountdown = gamemeta.delay or 3
+		end
+		-- Situations where we want to cue up a swap for P2's HP dropping:
+			-- They're walking around unmerged AND player-controlled
+			-- They're being controlled by P1 because they're in a merged state
+		-- conversely, we want process P2's HP and NOT swap: 
+			-- if they are merging/unmerging (there are false HP drops here!)
+			-- this applies on the last frame of merges and unmerges as well
+		if (currmerged or p2currhuman) and currmerging == 0 and prevmerging == 0 then
+			if p2prevhp ~= nil and p2currhp < p2prevhp then
+				data.p2hpcountdown = gamemeta.delay or 3
+			end
+		end
+
+		-- check to see if the life count went down
+		-- only Pocky has lives; P2 respawns as often as you want, after a delay
+		if pockyprevlc ~= nil and pockycurrlc < pockyprevlc then
+			return true
+		end
+
+		-- finally, you should swap on losing the ears
+		-- for some reason, the ears value drops to 0 during the unmerging process, and it pops right back to normal when this is complete
+		-- therefore, swap on losing ears ONLY if you're not in a merge/unmerge!
+		local ears_changed, ears_curr = update_prev("ears", gamemeta.getears())
+		if ears_changed == true and ears_curr == false and currmerged == false then
+			data.p1hpcountdown = gamemeta.delay or 3
+		end
+
+		return false
+	end
+end
+
 local function always_swap(gamemeta)
 	return function(data)
 		return true -- Always swap!
@@ -2611,6 +2674,7 @@ local gamedata = {
 		-- this value is the "game state" where the game is fading out after Samus dies.
 		-- Tells us Samus hit 0 for real, not due to resets etc.
 		gethp=function() return memory.read_u16_le(0x09C2, "WRAM") end,
+		grace=60,
 	},
 	['SMZ3']={ -- Super Metroid x A Link to the Past Crossover Randomizer
 		func=SMZ3_swap,
@@ -2643,6 +2707,7 @@ local gamedata = {
 			end
 		end,
 		getwhichgame=function() return memory.read_u8(0x33FE, "CARTRAM") end,
+		grace=60,
 	},
 	['Anticipation']={ -- Anticipation NES
 		func=antic_swap,
@@ -3446,17 +3511,23 @@ local gamedata = {
 	},
 	['CV4_SNES']={ -- Super Castlevania IV, SNES
 		func=singleplayer_withlives_swap,
-		p1gethp=function() return memory.read_u8(0x0013F4, "WRAM") end,
-		p1getlc=function() return memory.read_u8(0x00007C, "WRAM") end,
+		-- 0x0032: active gameplay == 4, demo == 2, password == 6
+		-- most importantly, ending == 7, and HP drops to 0 during transitions there (sometimes lives do as well)
+		gmode=function() return memory.read_u8(0x0032, "WRAM") == 4 end,
+		p1gethp=function() return memory.read_u8(0x13F4, "WRAM") end,
+		p1getlc=function() return memory.read_u8(0x007C, "WRAM") end,
 		maxhp=function() return 16 end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "WRAM" end,
-		p1livesaddr=function() return 0x00007C end,
+		p1livesaddr=function() return 0x007C end,
 		maxlives=function() return 106 end,
 		ActiveP1=function() return true end, -- p1 is always active!
 	},
 	['BLOODLINES_GEN']={ -- Castlevania: Bloodlines, Genesis
 		func=singleplayer_withlives_swap,
+		-- 0x9002: active gameplay == 9, main menu == 4, options == 5
+		-- other relevant values include 12 and 13 for ending, where HP drops to 1
+		gmode=function() return memory.read_u16_be(0x9002, "68K RAM") == 9 end,
 		p1gethp=function() return memory.read_u8(0x9C11, "68K RAM") end,
 		p1getlc=function() return memory.read_u8(0xFB2F, "68K RAM") end,
 		maxhp=function() return 80 end,
@@ -3513,8 +3584,15 @@ local gamedata = {
 		-- checking for iframes to not swap on devil soul use etc
 		func=iframe_health_swap,
 		is_valid_gamestate=function() return memory.read_u8(0x0C07E8, "Main RAM") == 2 end,
-		-- hopefully this works for julius/boss rush mode too, bizhawk won't let me import saves for ds games
-		get_iframes=function() return memory.read_u8(0x0CA9F3, "Main RAM") end,
+			-- 0x0CA9F3: iframes
+			-- 0x0CA9F4: also acts like iframes; noted on damage by Aguni (getting hit by downward dive, also some side movement)
+			-- 0x0CAA24: pops up to 1 at times for using certain moves but also works like iframes for spikes
+				-- with non-spike damage, can pop up to nearly the same number as 0x0CA9F3 (offset by 1) and count down simultaneously
+		get_iframes=function() return memory.read_u8(0x0CA9F3, "Main RAM") -- "normal" iframes
+			+ memory.read_u8(0x0CA9F4, "Main RAM") 
+			+ memory.read_u8(0x0CAA24, "Main RAM")
+		end,
+		iframe_minimum=function() return 1 end,
 		get_health=function() return memory.read_u16_le(0x0F7410, "Main RAM") end,
 		other_swaps=function() return false end,
 		grace=60,
@@ -3561,6 +3639,7 @@ local gamedata = {
 			-- set to 0xFFFF when timer is off, counts down in decimal mode from 0x9999 while on, set to 0xFF00 when time runs out
 			return time_up_changed and time_up_curr
 		end,
+		grace=60,
 	},
 	['Metroid2']={ -- Metroid II Return of Samus, GB
 		func=iframe_health_swap,
@@ -3570,6 +3649,7 @@ local gamedata = {
 		-- like nes metroid, health is stored in decimal mode
 		other_swaps=function() return false end,
 		-- no escape sequence this game
+		grace=60,
 	},
 	['MetroidFusion']={ -- Metroid Fusion, GBA
 		func=iframe_health_swap,
@@ -3596,6 +3676,7 @@ local gamedata = {
 			return time_up_changed and time_up_curr, 65
 			-- add extra delay so you get the whiteout animation before shuffling
 		end,
+		grace=60,
 	},
 	['MetroidZero']={ -- Metroid Zero Mission, GBA
 		func=iframe_health_swap,
@@ -3642,6 +3723,7 @@ local gamedata = {
 			end
 			return false
 		end,
+		grace=60,
 	},
 	['Zelda_1']={ -- The Legend of Zelda, NES
 		func=iframe_health_swap,
@@ -4372,7 +4454,7 @@ local gamedata = {
 		get_player_state=function() return memory.read_u16_le(0x73404, "MainRAM") end,
 		stone_state=11,
 		game_over_check=function()
-			gamestate = memory.read_u32_le(0x3C734, "MainRAM")
+			local gamestate = memory.read_u32_le(0x3C734, "MainRAM")
 			if gamestate == 3 and memory.read_u32_le(0x73060, "MainRAM") == 5 then -- Screen melt starting
 				return true -- Game Over
 			else
@@ -4380,10 +4462,11 @@ local gamedata = {
 			end
 		end,
 		is_valid_gamestate=function()
-			gamestate = memory.read_u32_le(0x3C734, "MainRAM")
+			local gamestate = memory.read_u32_le(0x3C734, "MainRAM")
 			return gamestate == 2 -- Gameplay
 				or gamestate == 3 -- Game Over
 		end,
+		grace=90,
 	},
 	['SOTN_PS1_2']={ -- Japan (1.2), Europe and Asia releases
 		func=sotn_swap,
@@ -4393,7 +4476,7 @@ local gamedata = {
 		get_player_state=function() return memory.read_u16_le(0x7340C, "MainRAM") end,
 		stone_state=11,
 		game_over_check=function()
-			gamestate = memory.read_u32_le(0x3C73C, "MainRAM")
+			local gamestate = memory.read_u32_le(0x3C73C, "MainRAM")
 			if gamestate == 3 and memory.read_u32_le(0x73068, "MainRAM") == 0 then -- Screen melt starting
 				return true -- Game Over
 			else
@@ -4401,10 +4484,11 @@ local gamedata = {
 			end
 		end,
 		is_valid_gamestate=function()
-			gamestate = memory.read_u32_le(0x3C73C, "MainRAM")
+			local gamestate = memory.read_u32_le(0x3C73C, "MainRAM")
 			return gamestate == 2 -- Gameplay
 				or gamestate == 3 -- Game Over
 		end,
+		grace=90,
 	},
 	['SOTN_SATURN']={ -- Akumajou Dracula X: Gekka no Yasoukyoku (Saturn)
 		func=sotn_swap,
@@ -4414,18 +4498,19 @@ local gamedata = {
 		get_player_state=function() return memory.read_u16_be(0x99824, "Work Ram High") end,
 		stone_state=11,
 		is_valid_gamestate=function()
-			gamestate = memory.read_u16_be(0x5CD72, "Work Ram High") -- May not be the actual gamestate addr, but works for our purpose
+			local gamestate = memory.read_u16_be(0x5CD72, "Work Ram High") -- May not be the actual gamestate addr, but works for our purpose
 			return gamestate == 1 -- Gameplay
 				or gamestate == 5 -- Game Over
 		end,
 		game_over_check=function()
-			gamestate = memory.read_u16_be(0x5CD72, "Work Ram High")
+			local gamestate = memory.read_u16_be(0x5CD72, "Work Ram High")
 			if gamestate == 5 then -- Changes as soon as the fade-to-white starts
 				return true -- Game Over
 			else
 				return false -- Gameplay
 			end
 		end,
+		grace=90,
 	},
 	['CV64_JPN_N64']={
 		func=castlevania_n64_swap,
@@ -5203,7 +5288,7 @@ local gamedata = {
 			end
 			
 		end,
-		grace=20, -- just make sure we don't combo on deaths
+		grace=50, -- just make sure we don't combo on deaths (previously 20)
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function() return 0x157911 end,
 		-- importantly, we have to write just one byte
@@ -5488,6 +5573,7 @@ local gamedata = {
 		LivesWhichRAM=function() return "RAM" end,
 		maxlives=function() return 69 end,
 		ActiveP1=function() return true end, -- p1 is always active!
+		grace=100, -- approx 60 frames from knockback/iframes until vulnerable again
 	},
 	['NinjaGaiden2_NES']={ -- Ninja Gaiden II, NES
 		func=singleplayer_withlives_swap,
@@ -5499,6 +5585,7 @@ local gamedata = {
 		LivesWhichRAM=function() return "RAM" end,
 		maxlives=function() return 9 end,
 		ActiveP1=function() return true end, -- p1 is always active!
+		grace=100, -- approx 90 frames from knockback/iframes until vulnerable again
 	},
 	['NinjaGaiden3_NES']={ -- Ninja Gaiden III, NES
 		func=singleplayer_withlives_swap,
@@ -5510,12 +5597,14 @@ local gamedata = {
 		LivesWhichRAM=function() return "RAM" end,
 		maxlives=function() return 9 end,
 		ActiveP1=function() return true end, -- p1 is always active!
+		grace=100, -- approx 60 frames from knockback/iframes until vulnerable again
 	},
 	['BuckyOHare_NES']={ -- Bucky O'Hare, NES
 		func=singleplayer_withlives_swap,
 		p1gethp=function() return memory.read_u8(0x5a0, "RAM") end,
 		p1getlc=function() return memory.read_u8(0x004C, "RAM") end,
 		maxhp=function() return 255 end,
+		grace=50, -- note, you appear to get 32 iframes with no recoil
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x004C end,
@@ -5535,6 +5624,17 @@ local gamedata = {
 	},
 	['KabukiQuantumFighter_NES']={ -- Kabuki Quantum Fighter, NES
 		func=singleplayer_withlives_swap,
+		gmode=function()
+			-- end of level, ticks down time to 000, then health
+			-- in the ending, lives tick down but timer is also all zeroes
+			-- if timer is all zeros, we are not in active gameplay
+			-- side effect: on continuing after a time up, you'll be swapped on starting the timer for the level
+			-- rather than right after dying
+			-- this is acceptable
+			if (memory.read_u8(0x691, "RAM") == 0 and memory.read_u8(0x692, "RAM") == 0 and
+				memory.read_u8(0x693, "RAM")) then return false end
+			return true
+		end,
 		p1gethp=function() return memory.read_s8(0x68c, "RAM") end,
 		p1getlc=function() return memory.read_s8(0x6c0, "RAM") end,
 		maxhp=function() return 15 end,
@@ -5542,19 +5642,17 @@ local gamedata = {
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x6c0 end,
 		maxlives=function() return 9 end,
-		ActiveP1=function() return true end, -- p1 is always active!
+		ActiveP1=function()
+		-- p1 should only get lives refilled if we're in gameplay
+		-- definitely not in the ending, where the lives count down
+		-- lives will still refill if you get hit after a timeup, though HUD does not always update
+			return (memory.read_u8(0x691, "RAM") == 0 and memory.read_u8(0x692, "RAM") == 0 and
+				memory.read_u8(0x693, "RAM") == 0) == false
+		end,
 		swap_exceptions=function()
-			-- end of level, ticks down time, then health
-			-- if timer is all zeros, and you didn't lose a life from time up, don't swap
-			local lives_changed = update_prev ("lives", memory.read_s8(0x6c0, "RAM"))
-			if 
-				(memory.read_u8(0x691, "RAM") == 0 and memory.read_u8(0x692, "RAM") == 0 and
-				memory.read_u8(0x693, "RAM") == 0 and not lives_changed)
-				or
-				(memory.read_u8(0x355, "RAM") == 0x80) -- we are on the pause menu; you can trade hp and chips for each other during boss fights
-			then
-				return true
-			end
+		-- if paused during boss fights, on the pause menu, you can trade hp and chips for each other
+		-- this is intentional, not damage, so don't swap
+			if (memory.read_u8(0x355, "RAM") == 0x80) then return true end
 			return false
 		end,
 	},
@@ -5595,9 +5693,17 @@ local gamedata = {
 	},
 	['Gimmick_NES']={ -- Gimmick!, NES
 		func=singleplayer_withlives_swap,
+		-- maxhp (at 0x002B) can change between stages if player has collected orange potions
+		-- and, this means that you can drop from 3 or 4 hp to 2 between levels for non-damage reasons
+		-- the value at this address unfortunately changes 1 frame before the hp drop; neither gmode nor a toggle check will do
+		-- swap_exceptions option: 0x00E1 relates to player state; 0x53 is on map screen, which is where maxhp changes happen
 		p1gethp=function() return memory.read_u8(0x346, "RAM") end,
 		p1getlc=function() return memory.read_u8(0x104, "RAM") end,
-		maxhp=function() return 255 end,
+		maxhp=function() return 4 end,
+		swap_exceptions=function() 
+			if memory.read_u8(0x00E1, "RAM") == 0x53 then return true end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x104 end,
@@ -5636,8 +5742,8 @@ local gamedata = {
 		maxhp=function() return 1 end, -- Strictly speaking this CAN go higher and be handled as extra hit points, but the game itself won't do that
 		minhp=-1,
 		gmode=function()
-			mode = memory.read_s8(0x278, "WRAM")
-			demo = memory.read_s8(0x1FB9, "WRAM")
+			local mode = memory.read_s8(0x278, "WRAM")
+			local demo = memory.read_s8(0x1FB9, "WRAM")
 			return demo ~= 2 and (mode == 0x2 or mode == 0x4 or mode == 0x5) -- Modes are Map, Gameplay, or Game Over, respectively
 		end,
 		swap_exceptions=function(gamemeta)
@@ -5694,8 +5800,8 @@ local gamedata = {
 		func=health_swap,
 		is_valid_gamestate=function() return memory.read_u16_be(0xA284, "68K RAM") == 0x38 end,
 		other_swaps=function() return false end,
-		get_health=function() return memory.read_u16_le(0xA424, "68K RAM") end,
-		maxhp=function() return 100 end,
+		get_health=function() return memory.read_u16_be(0xA424, "68K RAM") end, -- note; health will not go above 999
+		grace=60,
 	},
 	['ContraHardCorps_GEN']={ -- Contra - Hard Corps, Genesis
 		func=twoplayers_withlives_swap,
@@ -5971,7 +6077,7 @@ local gamedata = {
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x036a end,
-		maxlives=function() return 69 end,
+		maxlives=function() return 7 end, -- lives count down on clearing this game
 		ActiveP1=function() return true end, -- p1 is always active!
 	},
 	['HighSeasHavoc_GEN']={ -- High Seas Havoc, Genesis
@@ -6023,55 +6129,24 @@ local gamedata = {
 		ActiveP2=function() return memory.read_u8(0x006b, "WRAM") > 0 end,
 		grace=60,
 	},
-	['PockyRocky2_SNES']={ -- Pocky & Rocky 2, SNES
-		func=twoplayers_withlives_swap,
-		-- the two players work VERY DIFFERENTLY from one another in this game
-		-- p1 appears to have their health stored at 0x19CE in an insane way (between 2 and 12, or 0x02 and 0x0C) and at 2B88 (three states: base, kimono, armor)
-		gmode=function() 
-			-- only track health if pocky's health is valid 
-			return memory.read_u16_le(0x2B88, "WRAM") == 0x1815  
-			or memory.read_u16_le(0x2B88, "WRAM") == 0x0015  
-			or memory.read_u16_le(0x2B88, "WRAM") == 0x6D29  
-		end,
-		p1gethp=function()
-			local pocky_states = {
-				[0x1815] = 1,
-				[0x0015] = 2, -- kimono
-				[0x6D29] = 3, -- kimono + armor item
-			}
-			-- also track bunny ears, 0 if not present and 254 if there
-			if memory.read_u8(0x1901, "WRAM") == 254
-			then 
-				return pocky_states[memory.read_u16_le(0x2B88, "WRAM")] + 1
-			else 
-				return pocky_states[memory.read_u16_le(0x2B88, "WRAM")] or 0
-			end
-		end,
-		p1getlc=function() return memory.read_u8(0x19F4, "WRAM") end, -- at least lives work normally here!
-		p2gethp=function() 
-			if memory.read_u8(0x18CE, "WRAM") == 1 -- 2p is human-controlled
-				or (memory.read_u8(0x19CE, "WRAM") > 0x80) -- p1 and p2 have merged
-			then return memory.read_u8(0x05EA, "WRAM")
-			else
-				return 4 -- if 2p is separate/CPU, don't track them, and act like they have max HP
-			end
-		end,
-		p2getlc=function() return 0 end, -- the second player respawns after a cooldown
-		maxhp=function() return 5 end,
-		minhp=-1, -- we do want to shuffle on 0, because 2p does not use lives
-		swap_exceptions=function()
-			-- if on merging/unmerging frame, don't swap, so we can start tracking p2's hp
-			local merged_changed = update_prev("merged", memory.read_u8(0x19CE, "WRAM") >= 0x80)
-			local lives_changed, lives_curr, lives_prev = update_prev("lives", memory.read_u8(0x19F4, "WRAM"))
-			if merged_changed and not lives_changed then return true end
-			return false
-		end,
+ 	['PockyRocky2_SNES']={ -- Pocky & Rocky 2, SNES
+		func=PockyRocky2_SNES_swap,
+		getpockystate=function() return memory.read_u16_le(0x2B88, "WRAM") end,
+		gettimeup=function() return (memory.read_u16_le(0x05B4, "WRAM") == 0) end,
+		getears=function() return memory.read_u8(0x1901, "WRAM") == 254 end,
+		getlc=function() return memory.read_u8(0x19F4, "WRAM") end,
+		getp2ishuman=function() return memory.read_u8(0x18CE, "WRAM") == 1 end,
+		getp2hp=function() return memory.read_u8(0x05EA, "WRAM") end,
+		getmerged=function() return memory.read_u8(0x19CE, "WRAM") >= 0x80 end,
+		getmerging=function() return memory.read_u8(0x04B2, "WRAM") end,
+		getmounthp=function() return memory.read_u8(0x19F2, "WRAM") end,
+		getlevel=function() return memory.read_u8(0x0552, "WRAM") end,
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function() return 0x19F4 end,
 		LivesWhichRAM=function() return "WRAM" end,
 		maxlives=function() return 4 end,
 		ActiveP1=function() return true end, -- p1 is always active! p2 doesn't need lives so don't specify anything for them!
-		grace=40,
+		grace=50,
 	},
 	['RainbowIslands_NES']={ -- Rainbow Islands - The Story of Bubble Bobble 2, NES
 		func=singleplayer_withlives_swap,
@@ -6086,9 +6161,10 @@ local gamedata = {
 	},
 	['Ristar_GEN']={ -- Ristar, Genesis
 		func=singleplayer_withlives_swap,
+		gmode=function() return memory.read_u16_be(0xea02, "68K RAM") == 4 or memory.read_u16_be(0xea02, "68K RAM") == 5 end, -- level is loading from 0 to 3, controllable at 5
 		p1gethp=function() return memory.read_u8(0xc038, "68K RAM") end,
 		p1getlc=function() return memory.read_u8(0xe578, "68K RAM") end,
-		maxhp=function() return 32 end,
+		maxhp=function() return 4 end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "68K RAM" end,
 		p1livesaddr=function() return 0xe578 end,
@@ -6125,14 +6201,21 @@ local gamedata = {
 	},
 	['SimpsonsBartvsWorld_NES']={ -- The Simpsons: Bart vs. the World, NES
 		func=singleplayer_withlives_swap,
+		gmode=function() return
+			-- player has to be in control and not in a minigame like the sliding puzzle
+			-- NOTE: if implementing swaps for bonus game fails, this will need adjustment!
+			(memory.read_u8(0x0079, "RAM") == 0 -- sidescrolling Bart; this address is 0xFF in minigames, aside from skateboard
+			or memory.read_u8(0x0425, "RAM") == 0x24) -- Bart on skateboard; 0x20 is walking, 0x22 is Bartman
+		end,
 		p1gethp=function() return memory.read_u8(0x06bc, "RAM") end,
 		p1getlc=function() return memory.read_s8(0x06c1, "RAM") end,
-		maxhp=function() return 255 end,
+		maxhp=function() return 5 end,
+		minhp=-1,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x06c1 end,
 		maxlives=function() return 5 end,
-		ActiveP1=function() return true end, -- p1 is always active!	
+		ActiveP1=function() return true end, -- p1 is always active!
 	},
 	['Sparkster_SNES']={ -- Sparkster, SNES
 		func=singleplayer_withlives_swap,
@@ -6152,7 +6235,48 @@ local gamedata = {
 		func=singleplayer_withlives_swap,
 		p1gethp=function() return memory.read_u8(0x0112, "RAM") end,
 		p1getlc=function() return memory.read_s8(0x0117, "RAM") end,
-		maxhp=function() return 44 end,
+		maxhp=function() 
+		-- your default maxhp is heart containers times 2
+		-- however, the pills in the final level overfill your health to the max value of 44 (22 hearts)
+		-- and the effect gradually wears off, eventually bringing your hp back down to your max hearts
+		-- you should NOT shuffle just because your maxhp decreased by 1 in this state
+		-- so we need to check if HP is greater than maxhp but <= 44 and adjust maxhp on the fly accordingly
+			local heartcontainers = memory.read_u8(0x0111, "RAM")
+			if memory.read_u8(0x0112, "RAM") <= 44 and memory.read_u8(0x0112, "RAM") > heartcontainers*2
+				then return memory.read_u8(0x0112, "RAM")
+			else
+				return heartcontainers*2
+			end
+		end,
+		swap_exceptions=function()
+		-- lives will get reset to 3 on completing dungeon areas, during loading
+		-- so, if you have collected lives, these will drop and you will swap
+		-- HP also gets set to the base of 6 (3 full hearts) on starting Chapter 4 
+		-- (and possibly future chapters? there is no combat in Chapter 4)
+		-- this hp reset would swap you if you have health > 6 on completing the prior chapter
+		-- so, ignore lives/hp changes during loading screens (deaths get tallied slightly after loading)
+		-- main area and sub-areas are on the first three addresses, and 0x80 and up means they are loading
+			local loading_changed, loading_curr = update_prev("loading", memory.read_u8(0x0000, "RAM") >= 0x80 or memory.read_u8(0x0001, "RAM") >= 0x80 or memory.read_u8(0x0002, "RAM") >= 0x80)
+			if loading_curr then return true end
+		-- the HP changes between chapters happen while you are in overhead mode, not in a dungeon.
+		-- no HP drops in overhead mode should swap you, but they need to be processed
+			local overhead_mode_changed, overhead_mode_curr = update_prev("overhead_mode", memory.read_u8(0x0048, "RAM") >= 0x80)
+			if overhead_mode_curr then return true end
+			return false
+		end,
+		other_swaps=function()
+		-- if your health is overcharged due to the pills in the final level, your health will gradually tick down, 1 hp at a time
+		-- until you reach your actual maxhp (based on heart containers)
+		-- you should shuffle if hp drops by > 1 in this state,
+		-- as anything that can hit you at that point in the game will do more than 1 hp of damage
+		-- also, check the frame after the damage is done, just to be sure that swaps occur if you drop down to at/below your usual maxhp (no longer overcharged)
+			local is_hp_overcharged_changed, is_hp_overcharged_curr = update_prev("is_hp_overcharged", (memory.read_u8(0x0112, "RAM") > memory.read_u8(0x0111, "RAM")*2 and memory.read_u8(0x0112, "RAM") <= 44))
+			if is_hp_overcharged_changed == true or is_hp_overcharged_curr == true then
+				local overcharged_hp_changed, overcharged_hp_curr, overcharged_hp_prev = update_prev("overcharged_hp", memory.read_u8(0x0112, "RAM"))
+				if overcharged_hp_changed == true and overcharged_hp_curr < overcharged_hp_prev - 1 then return true end
+			end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x0117 end,
@@ -6379,11 +6503,21 @@ local gamedata = {
 		p1gethp=function() return memory.read_s8(0x0264, "WRAM") end,
 		p1getlc=function() return memory.read_s8(0x024C, "WRAM") end,
 		maxhp=function() return 5 end,
+		minhp=-1,
+		swap_exceptions=function()
+			-- 0x0104: appears to be level/map
+			-- map screen == 15; when you go from 15 to a level, health drops to 0
+			-- catch all scene transitions and disallow swapping on them
+			local scene_changed = update_prev("scene", memory.read_u8(0x0104, "WRAM"))
+			if scene_changed == true then return true end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "WRAM" end,
 		p1livesaddr=function() return 0x024C end,
 		maxlives=function() return 5 end,
 		ActiveP1=function() return true end, -- p1 is always active!
+		grace=60, -- this also helps avoid a double-swap on a death from falling; if you fall, health drops to 0 about 33 frames later
 	},
 	['Titenic_NES']={ -- Titenic (bootleg), NES
 		func=singleplayer_withlives_swap,
@@ -6562,6 +6696,17 @@ local gamedata = {
 		p1gethp=function() return 1 end,
 		p1getlc=function() return memory.read_s8(0x0168, "WRAM") end,
 		maxhp=function() return 1 end,
+		swap_exceptions=function()
+			-- when you beat Super Doh in level 99, lives count down and add to your score
+			-- don't shuffle if you are on that level and Super Doh has no health left
+			if memory.read_u8(0x0154, "WRAM") == 98 -- level 99
+				-- HP of left arm, right arm, body
+				and memory.read_u8(0x0C41, "WRAM") == 0 and memory.read_u8(0x0C43, "WRAM") == 0 and memory.read_u8(0x0C45, "WRAM") == 0
+			then 
+				return true
+			end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "WRAM" end,
 		p1livesaddr=function() return 0x0168 end,
@@ -6595,7 +6740,7 @@ local gamedata = {
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "Work Ram High" end,
 		p1livesaddr=function() return 0x061575 end, -- story continues
-		maxlives=function() return 5 end,
+		maxlives=function() return 1 end,
 		ActiveP1=function() return true end, -- p1 is always active!
 	},
 	['Sonic1_GEN']={ -- Sonic the Hedgehog (Genesis/Mega Drive)
@@ -6653,14 +6798,14 @@ local gamedata = {
 	['Sonic3D_GEN']={ -- Sonic 3D Blast: Flickies' Island (Genesis/Mega Drive)
 		func=sonic_swap,
 		gmode=function()
-			mode = memory.read_u16_be(0x3FE, "68K RAM")
+			local mode = memory.read_u16_be(0x3FE, "68K RAM")
 			return mode == 0x5F8 -- Gameplay
 				or mode == 0x5A0 -- Stage loading; lives are subtracted the same time this mode is set, so we need to use it
 		end,
 		get_rings=function() return memory.read_u16_be(0xA5A, "68K RAM") end,
 		get_shield=function() return memory.read_u8(0xAC2, "68K RAM") & 0x40 end,
 		get_lives=function()
-			mode = memory.read_u16_be(0x3FE, "68K RAM")
+			local mode = memory.read_u16_be(0x3FE, "68K RAM")
 			if mode == 0x91E or mode == 0x88C then -- Game Over or Continue; both are handled if you die with 0 lives, which is otherwise a valid life number
 				return -1
 			end
@@ -6676,7 +6821,7 @@ local gamedata = {
 	['Sonic3D_SAT']={ -- Sonic 3D Blast (Saturn)
 		func=sonic_swap,
 		gmode=function()
-			mode = memory.read_u8(0xFF06, "Work Ram High")
+			local mode = memory.read_u8(0xFF06, "Work Ram High")
 			return (mode >= 0x4 and mode <= 0x16) -- RA asserts this is gameplay, but it appears to be music tracks? Well, here's all the gameplay ones, at least
 				or mode == 0x1D -- Loading? At any rate this mode accompanies a life loss
 				or mode == 0x18 -- Continue
@@ -6685,7 +6830,7 @@ local gamedata = {
 		get_rings=function() return memory.read_u16_be(0x9800C, "Work Ram High") end,
 		get_shield=function() return memory.read_u8(0x9807D, "Work Ram High") & 0x40 end,
 		get_lives=function()
-			mode = memory.read_u8(0xFF06, "Work Ram High")
+			local mode = memory.read_u8(0xFF06, "Work Ram High")
 			if mode == 0x3 or mode == 0x18 then -- Game Over or Continue; both are handled if you die with 0 lives, which is otherwise a valid life number
 				return -1
 			end
@@ -6711,9 +6856,9 @@ local gamedata = {
 			return memory.read_u8(0x579E, "68K RAM") -- Bonus not being relevant, use the normal life value
 		end,
 		gmode=function()
-			demomode = memory.read_u8(0x6, "68K RAM")
-			gamestate = memory.read_u16_be(0x3CB6, "68K RAM")
-			bonusstate = memory.read_u16_be(0x3CA8, "68K RAM")
+			local demomode = memory.read_u8(0x6, "68K RAM")
+			local gamestate = memory.read_u16_be(0x3CB6, "68K RAM")
+			local bonusstate = memory.read_u16_be(0x3CA8, "68K RAM")
 			if demomode == 1 then
 				return false -- In demo, ignore
 			end
@@ -6734,7 +6879,7 @@ local gamedata = {
 	['IQ_PS1_NA']={ -- I.Q.: Intelligent Qube, PS1 (TODO: PAL? Japan?)
 		func=iq_swap,
 		gmode=function()
-			gamemode = memory.read_u8(0x6C7F8, "MainRAM")
+			local gamemode = memory.read_u8(0x6C7F8, "MainRAM")
 			return gamemode == 0x04 -- Gameplay
 				or gamemode == 0x0A -- Gameplay? (RA says this can happen)
 				or gamemode == 0x12 -- Death
@@ -6753,7 +6898,7 @@ local gamedata = {
 				and memory.read_u32_le(0x1FFFEC, "MainRAM") ~= 0x00000000 -- Need something to point to
 		end,
 		p1gethp=function()
-			statePtr = memory.read_u32_le(0x1FFFEC, "MainRAM")
+			local statePtr = memory.read_u32_le(0x1FFFEC, "MainRAM")
 			if (statePtr == 0x00000000) then
 				return 0
 			else
@@ -6764,7 +6909,7 @@ local gamedata = {
 		maxhp=function() return 0x7FFFFFFF end, -- There is seemingly no actual cap, but the value is signed and the minus character is garbage data
 		minhp=-1, -- You can live with 0 health
 		p1getlc=function()
-			statePtr = memory.read_u32_le(0x1FFFEC, "MainRAM")
+			local statePtr = memory.read_u32_le(0x1FFFEC, "MainRAM")
 			if (statePtr == 0x00000000) then
 				return 0
 			else
@@ -6777,7 +6922,7 @@ local gamedata = {
 		end,]]
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function()
-			statePtr = memory.read_u32_le(0x1FFFEC, "MainRAM")
+			local statePtr = memory.read_u32_le(0x1FFFEC, "MainRAM")
 			if (statePtr == 0x00000000) then
 				return nil -- Do not set lives this shuffle
 			else
@@ -6841,25 +6986,22 @@ local gamedata = {
 	}, 
 	['ViceProjectDoom_NES']={ -- Vice: Project Doom, NES
 		func=singleplayer_withlives_swap,
-		p1gethp=function() 
-			-- rail shooter levels: losing HP happens so quickly as to be unreactable
-			-- disable HP swaps in these two levels by pretending you are at max hp
-			if memory.read_u8(0x0085, "RAM") == 45 or memory.read_u8(0x0085, "RAM") == 46 -- in one of the two rail shooter levels
-			then
-				return 20
-			else 
-				return memory.read_u8(0x0280, "RAM") 
-			end
-		end,
-		p1getlc=function() return memory.read_s8(0x0362, "RAM") end,
+		p1gethp=function() return memory.read_u8(0x0280, "RAM") end,
+		p1getlc=function() return memory.read_u8(0x0362, "RAM") end,
 		maxhp=function() return 20 end,
+		swap_exceptions=function()
+			-- for the shooting gallery levels, there are no iframes at all
+			-- you get 60 for platform levels and 127 for car levels
+			-- so, in the two shooting galleries, we'll only shuffle on deaths, not for losing HP
+			local level = memory.read_u8(0x0092, "RAM")
+			if (level == 38 or level == 40) and memory.read_u8(0x0280, "RAM") > 0 then return true end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x0362 end,
 		maxlives=function() return 5 end,
 		ActiveP1=function() return true end, -- p1 is always active!
-		grace=60,
-		-- notes: 0x0180: iframes address; 60 iframes for sidescroller, 128 for car, NONE for shootouts
 	},
 	['MarbleMadness_NES']={ -- Marble Madness, NES
 		func=iframe_health_swap,
@@ -7081,10 +7223,27 @@ local gamedata = {
 	},
 	['WildGuns_SNES']={ -- Wild Guns, SNES
 		func=singleplayer_withlives_swap,
+		-- only swap during gameplay, not for demo/options
+		gmode=function() return memory.read_u8(0x0410, "WRAM") < 4 end,
 		p1gethp=function() return 1 end,
 		p1getlc=function() return memory.read_u8(0x1fb2, "WRAM") end,
 		maxhp=function() return 1 end,
-		CanHaveInfiniteLives=false,
+		swap_exceptions=function()
+		-- if level complete or ending music has been called, don't swap
+		-- this will prevent extra lives ticking down in final tally from swapping
+			local _, bonus_ending_curr = update_prev("bonus_ending", (memory.read_u8(0x0120, "WRAM") == 0x0D or memory.read_u8(0x0120, "WRAM") == 0x10))
+			if bonus_ending_curr == true then return true end
+			return false
+		end,
+		other_swaps=function()
+		-- when game over music is called, swap
+		-- gmode will prevent this from happening just because you play it in the sound test
+			local game_over_changed, game_over_curr = update_prev("game_over", memory.read_u8(0x0120, "WRAM") == 0x0F)
+			if game_over_changed and game_over_curr == true then return true end
+			return false
+		end,
+		-- Wild Guns has infinite continues; infinite lives has been set to false by default for difficulty purposes
+		CanHaveInfiniteLives=false, 
 		LivesWhichRAM=function() return "WRAM" end,
 		p1livesaddr=function() return 0x1fb2 end,
 		maxlives=function() return 5 end,
@@ -7103,9 +7262,19 @@ local gamedata = {
 	},
 	['Jaws_NES']={ -- Jaws, NES
 		func=singleplayer_withlives_swap,
-		p1gethp=function() return memory.read_u8(0x038a, "RAM")+ memory.read_u8(0x0393, "RAM") end,
+		p1gethp=function() return memory.read_u8(0x038a, "RAM") end, -- submarine
 		p1getlc=function() return memory.read_u8(0x0387, "RAM") end,
-		maxhp=function() return 4 end,
+		maxhp=function() return 1 end,
+		minhp=-1,
+		other_swaps=function()
+			-- goal: shuffle if you fail to defeat Jaws in the final battle
+			-- 0x0393 is the strobe counter, in case shuffling individual whiffs becomes possible
+			-- The strobe fight transitions either to the ending or, if you fail, sailing in regular gameplay
+			-- If you go from strobe fight to normal gameplay, swap
+			local scene_changed, scene_curr, scene_prev = update_prev("scene", memory.read_u8(0x046F, "RAM"))
+			if scene_changed and scene_curr == 1 and scene_prev == 4 then return true end
+			return false
+		end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "RAM" end,
 		p1livesaddr=function() return 0x0387 end,
@@ -7141,7 +7310,9 @@ local gamedata = {
 		func=health_swap,
 		get_health=function() return mainmemory.read_u8(0x2B1) end,
 		is_valid_gamestate=function() return mainmemory.read_u8(0x2BF) == 1 and -- check that we are not in the demo (0)
-			mainmemory.read_u8(0x360) > 0 and mainmemory.read_u8(0x360) <= 0x40 end, -- check if the counter that ticks down seconds of in-game timer is running
+			mainmemory.read_u8(0x360) > 0 and mainmemory.read_u8(0x360) <= 0x40 and -- check if the counter that ticks down seconds of in-game timer is running
+			-- check if both in 6-4 and past the final Pete fight (where the timer freezes; HP changes to 1 when ending plays)
+			not (mainmemory.read_u8(0x2AB) == 6 and mainmemory.read_u8(0x2AC) == 4 and mainmemory.read_u8(0x2AD) ~= 27) end,
 		other_swaps=function() return false end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "WRAM" end,
@@ -7197,6 +7368,7 @@ local gamedata = {
 		end,
 		-- notes for potential future other_swaps: "on fire" flag at 0x187BC6 and 0x1FEF4C, 1 == on fire
 		grace=60,
+		delay=7,
 	},
 	['JamesBondJr_SNES']={ -- James Bond Jr., SNES
 		func=twoplayers_withlives_swap, 
@@ -7220,11 +7392,11 @@ local gamedata = {
 		-- when p1 is being damaged, 0xCB56 turns to 0x20 (blinks up to 0x21 and back to 0x20 on a throw)
 		func=iframe_health_swap,
 		is_valid_gamestate=function() return true end,
-		get_iframes=function() return memory.read_u8(0xCABB, "68K RAM") end, -- todo: work out no shuffle on block
+		get_iframes=function() return memory.read_u16_be(0xCABA, "68K RAM") end, -- todo: work out no shuffle on block
 		other_swaps=function() return false end,
 		CanHaveInfiniteLives=true,
 		LivesWhichRAM=function() return "68K RAM" end,
-		p1livesaddr=function() return 0xAB7A end,
+		p1livesaddr=function() return 0xAB7B end, -- low byte of 16 bit BE word
 		maxlives=function() return 9 end,
 		ActiveP1=function() return true end, -- if infinite lives are on, p1 will always be active
 		grace=60, -- this should help with punch combos
@@ -7290,7 +7462,7 @@ local gamedata = {
 				local p2_wins_changed, p2_wins_curr, p2_wins_prev = update_prev("p2_wins", memory.read_u8(0x38A4, "WRAM"))
 				-- SHUFFLE CONDITIONS:
 				-- if we are on a screen where you cannot fight, for example, menus, don't swap - continue screen is fine
-				if memory.read_u8(0x3A7E, "WRAM") > 0x09 and not memory.read_u8(0x3A7E, "WRAM") == 0x0F then return false end
+				if memory.read_u8(0x3A7E, "WRAM") > 0x09 and not (memory.read_u8(0x3A7E, "WRAM") == 0x0F) then return false end
 				-- if p2 just won round 1, or has 2 wins and the match rolls over to the continue screen, then swap
 				-- but don't swap right on winning their second match, to avoid doubles
 				if (p2_wins_curr == 2 and p2_wins_prev == 1) then return false end
@@ -7377,33 +7549,148 @@ local gamedata = {
 			end
 		end,
 	},
-	['PowerslaveExhumed_SAT']={ -- Powerslave/Exhumed, Saturn
+	['Powerslave_SAT']={ -- Powerslave, Saturn
 		func=health_swap,
-		get_health=function() return memory.read_u16_be(0x8608A, "Work Ram High") end,
+		get_health=function() return memory.read_s16_be(0x8608A, "Work Ram High") end,
 		is_valid_gamestate=function()
 			if memory.read_u8(0x90DF9, "Work Ram High") ~= 0x11 then
 				return false
 			end
 
 			-- This would go better in swap_exceptions, but going by the current flow of health_swap, is_valid_gamestate is used the same way???
+			-- Lava check
+			-- Here's how this works internally, according to SRUINS.C:179 in the SlaveDriver source code @ https://github.com/Lobotomy-Software/SlaveDriver-Engine/:
+			--
+			-- When the player touches lava or slime, ltHurtTime is set to 30 (BizHawk shows it as 29 though?) and ltHurtAmount is set to how much damage the floor will do per frame.
+			-- If you lack the Protective Anklet, this will be 20 HP per frame (and the player will almost certainly die, as there aren't enough health Ankhs before the Anklets to eat that damage).
+			-- If you HAVE the Protective Anklet, this is 2 HP per frame for lava, and 0 HP per frame for slime. (Slime DOES hurt on PS1, but not on Saturn.)
+			-- These values are set constantly as long as contact is maintained, but when contacct breaks, ltHurtTime is allowed to count down to 0.
+			-- While ltHurtTime is above 0, the value of ltHurtAmount is done to player health. When it reaches 0, damage stops.
+			-- The value of ltHurtAmount lingers at whatever the last value it was set to was.
 			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_swapexceptions", memory.read_u16_be(0x4A58A, "Work Ram High"))
-			if hurtfloordrain_curr ~= nil and hurtfloordrain_prev ~= nil and hurtfloordrain_curr >= 0 and hurtfloordrain_prev > 0 then
-				return false -- Lava drain had already started and hasn't stopped
+			if
+				hurtfloordrain_curr ~= nil
+				and hurtfloordrain_prev ~= nil
+				and hurtfloordrain_curr >= 0
+				and hurtfloordrain_prev > 0
+				and memory.read_u16_be(0x4A586, "Work Ram High") ~= 0 -- Player isn't on slime while protected by anklets
+			then
+				return false -- Lava drain had already started and hasn't stopped, do not shuffle so the player has a chance to reorient themselves
+			end
+
+			-- Drowning check
+			-- Here's how this works internally, according to SRUINS.C:1421 in the SlaveDriver source code @ https://github.com/Lobotomy-Software/SlaveDriver-Engine/:
+			--
+			-- 1. If the player is underwater, underCount goes up, apparently by two.
+			-- 2. If underCount hits 220, airStatus is increased by 27.0. (It's technically a 32-bit 16.16 fixed-point variable, but it's only modified by integer values.)
+			-- 3. If airStatus is above 270.0:
+			--     * Player health is docked 30.
+			--     * airStatus is set back to 270.0.
+			--     * underCount is set to the value of drownStatus.
+			--     * drownStatus is set to 180, so subsequent drowning loops will happen much faster.
+			-- 4. Else, underCount continues going up until 240, when it's set back to 0.
+			--     * drownStatus is also set to 0 in this instance, in preparation for the loop in step 3.
+			-- 5. If the player surfaces:
+			--     * underCount is set to -1.
+			--     * airStatus is set to 0.0.
+			--     * drownStatus is left at whatever value is was before - 0 or 180 - and thus can't be the sole indicator of fast drowning.
+			-- Note that all of this presumes you have the Sobek Mask to prolong underwater breathing.
+			-- If you don't, airStatus is immediately set to 270.0, and drownStatus is never reset from 180.
+			local underCount_changed, underCount, underCount_prev = update_prev("underCount", memory.read_s16_be(0x4A5E6, "Work Ram High"))
+			local drownStatus_changed, drownStatus, drownStatus_prev = update_prev("drownStatus", memory.read_s16_be(0x4A5CE, "Work Ram High"))
+			local airStatus = memory.read_s16_be(0x4A5C8, "Work Ram High")
+			if
+				airStatus == 270 -- Drowning threshold reached
+				and underCount_changed
+				and underCount_prev > underCount -- underCount dropped from 220
+				and drownStatus == 180
+				--and not drownStatus_changed -- If this JUST shot up to 180, let the drowning initiation cause a shuffle anyway
+			then
+				return false -- Damage was caused by drowning, do not shuffle so the player has a chance to reorient themselves
 			end
 
 			-- Everything checks out
 			return true
 		end,
-		--[[swap_exceptions=function() -- TODO: This isn't actually implemented in health_swap
-			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_swapexceptions", memory.read_u16_be(0x4A58A, "Work Ram High"))
-			if hurtfloordrain_curr ~= nil and hurtfloordrain_prev ~= nil and hurtfloordrain_curr > 0 and hurtfloordrain_prev > 0 then
-				return true -- Lava drain had already started and hasn't stopped
+		grace=90,
+	},
+	['Exhumed_SAT']={ -- Exhumed (Powerslave PAL), Saturn
+		func=health_swap,
+		get_health=function() return memory.read_s16_be(0x85286, "Work Ram High") end,
+		is_valid_gamestate=function()
+			if memory.read_u8(0x8FFE5, "Work Ram High") ~= 0x11 then
+				return false
 			end
-			return false
-		end,]]
-		other_swaps=function() -- TODO: not necessary???
-			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_otherswaps", memory.read_u16_be(0x4A58A, "Work Ram High"))
-			return hurtfloordrain_changed and hurtfloordrain_prev ~= nil and hurtfloordrain_prev == 0
+
+			-- This would go better in swap_exceptions, but going by the current flow of health_swap, is_valid_gamestate is used the same way???
+			-- Lava check (see Powerslave for pseudocode breakdown)
+			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_swapexceptions", memory.read_u16_be(0x498C2, "Work Ram High"))
+			if
+				hurtfloordrain_curr ~= nil
+				and hurtfloordrain_prev ~= nil
+				and hurtfloordrain_curr >= 0
+				and hurtfloordrain_prev > 0
+				and memory.read_u16_be(0x498BE, "Work Ram High") ~= 0 -- Player isn't on slime while protected by anklets
+			then
+				return false -- Lava drain had already started and hasn't stopped, do not shuffle so the player has a chance to reorient themselves
+			end
+
+			-- Drowning check (see Powerslave for pseudocode breakdown)
+			local underCount_changed, underCount, underCount_prev = update_prev("underCount", memory.read_s16_be(0x4991E, "Work Ram High"))
+			local drownStatus_changed, drownStatus, drownStatus_prev = update_prev("drownStatus", memory.read_s16_be(0x49906, "Work Ram High"))
+			local airStatus = memory.read_s16_be(0x49900, "Work Ram High")
+			if
+				airStatus == 270 -- Drowning threshold reached
+				and underCount_changed
+				and underCount_prev > underCount -- underCount dropped from 220
+				and drownStatus == 180
+				--and not drownStatus_changed -- If this JUST shot up to 180, let the drowning initiation cause a shuffle anyway
+			then
+				return false -- Damage was caused by drowning, do not shuffle so the player has a chance to reorient themselves
+			end
+
+			-- Everything checks out
+			return true
+		end,
+		grace=90,
+	},
+	['Seireki1999_SAT']={ -- Seireki 1999: Pharaoh no Fukkatsu (Powerslave NTSC-J), Saturn
+		func=health_swap,
+		get_health=function() return memory.read_s16_be(0x86B52, "Work Ram High") end,
+		is_valid_gamestate=function()
+			if memory.read_u8(0x918C1, "Work Ram High") ~= 0x11 then
+				return false
+			end
+
+			-- This would go better in swap_exceptions, but going by the current flow of health_swap, is_valid_gamestate is used the same way???
+			-- Lava check (see Powerslave for pseudocode breakdown)
+			local hurtfloordrain_changed, hurtfloordrain_curr, hurtfloordrain_prev = update_prev("hurtfloor_drain_swapexceptions", memory.read_u16_be(0x4A822, "Work Ram High"))
+			if
+				hurtfloordrain_curr ~= nil
+				and hurtfloordrain_prev ~= nil
+				and hurtfloordrain_curr >= 0
+				and hurtfloordrain_prev > 0
+				and memory.read_u16_be(0x4A81E, "Work Ram High") ~= 0 -- Player isn't on slime while protected by anklets
+			then
+				return false -- Lava drain had already started and hasn't stopped, do not shuffle so the player has a chance to reorient themselves
+			end
+
+			-- Drowning check (see Powerslave for pseudocode breakdown)
+			local underCount_changed, underCount, underCount_prev = update_prev("underCount", memory.read_s16_be(0x4A87E, "Work Ram High"))
+			local drownStatus_changed, drownStatus, drownStatus_prev = update_prev("drownStatus", memory.read_s16_be(0x4A866, "Work Ram High"))
+			local airStatus = memory.read_s16_be(0x4A860, "Work Ram High")
+			if
+				airStatus == 270 -- Drowning threshold reached
+				and underCount_changed
+				and underCount_prev > underCount -- underCount dropped from 220
+				and drownStatus == 180
+				--and not drownStatus_changed -- If this JUST shot up to 180, let the drowning initiation cause a shuffle anyway
+			then
+				return false -- Damage was caused by drowning, do not shuffle so the player has a chance to reorient themselves
+			end
+
+			-- Everything checks out
+			return true
 		end,
 		grace=90,
 	},
@@ -7828,12 +8115,18 @@ local gamedata = {
 		func=singleplayer_withlives_swap,
 		-- 0xfdb6 and 0xfdb7 are P2 and P1 states: 0x00=Inactive, 0x01=Playing, 0x02=Continue, 0x03=Game Over
 		gmode=function() 
-			local p1state = memory.read_u8(0x00FDB7, "m68000 : ram : 0x100000-0x10FFFF")
-			local p2state = memory.read_u8(0x00FDB6, "m68000 : ram : 0x100000-0x10FFFF")
-			return (p1state > 0 and p1state <= 3) or (p2state > 0 and p2state <= 3)
+			local p1state = memory.read_s8(0x00FDB7, "m68000 : ram : 0x100000-0x10FFFF")
+			local p2state = memory.read_s8(0x00FDB6, "m68000 : ram : 0x100000-0x10FFFF")
+			local level   = memory.read_s8(0x000281, "m68000 : ram : 0x100000-0x10FFFF")
+			return level ~= -1 and ((p1state > 0 and p1state <= 3) or (p2state > 0 and p2state <= 3))
 		end,
-		p1gethp=function() return memory.read_s8(0x0005E7, "m68000 : ram : 0x100000-0x10FFFF") end, -- slug health
-		p1getlc=function() return memory.read_u8(0x000377, "m68000 : ram : 0x100000-0x10FFFF") end,
+		p1gethp=function()
+			-- 0x0005E7: slug health
+			local swap_on_slug_damage = false -- if you want to swap when the slug (tank) is damaged, set this to true
+			if swap_on_slug_damage ~= true then return 0 end
+			return memory.read_s8(0x0005E7, "m68000 : ram : 0x100000-0x10FFFF")
+		end, 
+		p1getlc=function() return memory.read_s8(0x000377, "m68000 : ram : 0x100000-0x10FFFF") end,
 		maxhp=function() return 48 end,
 		minhp=-1;
 		CanHaveInfiniteLives=true,
@@ -7888,6 +8181,52 @@ local gamedata = {
 		p1livesaddr=function() return 0x0000F1 end,
 		LivesWhichRAM=function() return "WRAM" end,
 		maxlives=function() return 9 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+	},
+	['Windjammers_ARC']={ -- Windjammers / Flying Power Disc
+		func=function() 
+			return function()
+				local p2_points_changed, p2_points_curr, p2_points_prev = update_prev("p2_points", memory.read_u8(0x0008F3, "m68000 : ram : 0x100000-0x10FFFF")) -- max points == 0x15 (approximated)
+				local p1_sets_changed, p1_sets_curr, p1_sets_prev = update_prev("p1_sets", memory.read_u8(0x000872, "m68000 : ram : 0x100000-0x10FFFF")) -- max sets == 2
+				local p2_sets_changed, p2_sets_curr, p2_sets_prev = update_prev("p2_sets", memory.read_u8(0x0008F2, "m68000 : ram : 0x100000-0x10FFFF")) -- max sets == 2
+				-- gmode, no shuffling outside of gameplay
+				if memory.read_u8(0x00008A, "m68000 : ram : 0x100000-0x10FFFF")~=120 then return false end
+				-- shuffle occurs when opponent gets points
+				if p2_points_changed and p2_points_curr > p2_points_prev then return true, 30 end
+				-- shuffle occurs when opponent wins a set
+				if p2_sets_changed and p2_sets_curr > p2_sets_prev then
+					-- ties count as a win for both players, so suppress shuffle for tie when player 1 also wins a set
+					-- specifically: if score goes to 1-1 or 2-2 (leading to sudden death), don't swap
+					-- if a tie set leads to opponent winning (this would be 2 sets to 1), then DO swap
+					if p1_sets_changed and p1_sets_curr > p1_sets_prev and not (p1_sets_curr == 1 and p2_sets_curr == 2) then return false end 
+					return true, 150
+					end
+			return false
+			end
+		end,
+		grace=150, -- avoid double-swaps on giving up points at the end of sets
+		-- infinite lives does not apply
+	},
+	['DickTracy_NES']={ -- Dick Tracy, NES
+		func=health_swap,
+		is_valid_gamestate=function() return true end,
+		get_health=function() return memory.read_u8(0x0663, "RAM") end,
+		other_swaps=function() 
+			-- 0x002C: screen type; 10 == game over, 3 == office, 2 == safe cracking to continue
+			local game_over_changed, game_over_curr = update_prev("game_over", memory.read_u8(0x002C, "RAM") == 10)
+			if game_over_changed and game_over_curr == true then return true end
+			return false 
+		end,
+		grace=90, -- you get about 16 iframes total, sometimes a couple more. It's easy to get shot repeatedly on swapping in
+		-- Infinite lives: there are no lives in this game
+		-- but this function can be used to refill health (Smight's preference!) or first aid kits
+		-- TODO: per-game setting
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x0663 end, -- this is for infinite health
+		-- alternatively, use 0x06B9: first aid kits
+		LivesWhichRAM=function() return "RAM" end,
+		maxlives=function() return 8 end,
+		-- alternatively, use 2, for max first aid kits
 		ActiveP1=function() return true end, -- p1 is always active!
 	},
 }
@@ -8036,7 +8375,9 @@ function plugin.on_game_load(data, settings)
 	-- Little Samson (NES)
 	-- goal: if you lose an ally, detect that and resurrect them on swapping in
 	if tag == "LittleSamson_NES" then
+		local LittleSamson_NES_ReviveAllies = true -- turn this to false if you don't want this upgrade to Infinite Lives
 		if settings.InfiniteLives == true -- is Infinite Lives enabled?
+			and LittleSamson_NES_ReviveAllies == true
 		-- check if level is high enough to have all the teammates (not 0 through 3) and if "all teammates selectable" is set
 			and memory.read_u8(0x003F, "RAM") > 3 and memory.read_u8(0x0090, "RAM") % 16 == 0xF
 		then
@@ -8052,6 +8393,30 @@ function plugin.on_game_load(data, settings)
 			end 
 		end
 	end
+	
+	-- Teenage Mutant Ninja Turtles (NES)
+	-- goal: if you lose an ally, detect that and resurrect them on swapping in
+	if tag == "TMNT_NES" then
+		local TMNT_NES_ReviveAllies = true -- turn this to false if you don't want this upgrade to Infinite Lives
+		if settings.InfiniteLives == true -- is Infinite Lives enabled?
+			and TMNT_NES_ReviveAllies == true
+		then
+		-- if ally has 0 health, they died; set their hp to max to revive them
+			if memory.read_u8(0x0077, "RAM") == 0 -- Leo
+			then memory.write_u8(0x0077, 128, "RAM")
+			end 
+			if memory.read_u8(0x0078, "RAM") == 0 -- Raph
+			then memory.write_u8(0x0078, 128, "RAM")
+			end 
+			if memory.read_u8(0x0079, "RAM") == 0 -- Mike
+			then memory.write_u8(0x0079, 128, "RAM")
+			end 
+			if memory.read_u8(0x007A, "RAM") == 0 -- Don
+			then memory.write_u8(0x007A, 128, "RAM")
+			end 
+		end
+	end
+	
 
 	-- first time through with a bad match, tag will be nil
 	-- can use this to print a debug message only the first time
@@ -8414,5 +8779,24 @@ if type(tonumber(which_level)) == "number" then
 		end
 	end
 end
+
+-- #TO_OVERRIDE_INFINITE_LIVES
+-- Typically, if a game can give you infinite lives, CanHaveInfiniteLives will be set to true.
+-- You can override this for as many individual games as you want.
+-- To turn off infinite lives in a game, use its tag here (in this example, Ninja Gaiden 1) like so, but without the double hyphens that comment these out:
+
+-- gamedata['NinjaGaiden1_NES'].CanHaveInfiniteLives = false
+
+-- Some games can handle infinite lives but will have them turned off by default, for balance/difficulty purposes.
+-- Example: Wild Guns (SNES)
+-- To override this, write a line like so, without the double hyphens:
+
+-- gamedata['WildGuns_SNES'].CanHaveInfiniteLives = true
+
+-- You can simply un-comment the above line (remove the double hyphens) for Wild Guns specifically.
+-- Note that, if a game is not programmed to give infinite lives, setting its CanHaveInfiniteLives to true here won't do anything.
+
+-- FINAL NOTE: BEFORE UPDATING YOUR PLUGIN, COPY-PASTE THE LINES YOU ADD HERE TO SOMEWHERE SAFE, SO YOU CAN RE-ADD THEM
+-- this concludes #TO_OVERRIDE_INFINITE_LIVES
 
 return plugin

@@ -12,6 +12,7 @@ plugin.settings =
 	{ name='SwapChanceIncrease', type='boolean', label="Increase chance with every suppressed swap", default=true},
 	{ name='SwapChanceIncreaseAmount', type='number', label="Percent to increment swap chance with each encounter", default=5},
 	{ name='WriteSwapChanceToFile', type='boolean', label="Write current swap chance to a file for display", default=false},
+	{ name='SubtractFromRemainingSwaps', type='boolean', label="Subtract remaining swaps from file for display", default=false},
 }
 
 plugin.description =
@@ -36,6 +37,7 @@ local swap_scheduled
 local shouldSwap
 local prev_framecount
 local swap_chance
+local swaps_remaining
 
 
 --returns true if the die roll determines we should still swap if the swap requirements are met, then increases the chance if it fails
@@ -89,7 +91,7 @@ end
 local gamedata = {
 	['Lufia_2_SNES']={ -- Lufia 2 SNES
 		func=encounter_swap,
-		inEncounter=function() return memory.read_u8(0x0071, "WRAM") == 0x0000 end, --TODO:
+		inEncounter=function() return memory.read_u8(0x0071, "WRAM") == 0x0000 end, --TODO: Fix swap on save load
 		allow_swap=function() return true end,
 	},
 	['FF1_NES']={ -- Final Fantasy 1 NES
@@ -170,6 +172,17 @@ local backupchecks = {
 	},
 }
 
+function read_data(filename, mode)
+	local handle, err = io.open(filename, mode or 'r')
+	if handle == nil then
+		log_message(string.format("Couldn't read from file: %s", filename))
+		log_message(err)
+		return
+	end
+	swaps_remaining = handle:read()
+	handle:close()
+end
+
 local function get_game_tag()
 	-- try to just match the rom hash first
 	local tag = get_tag_from_hash_db(gameinfo.getromhash(), 'plugins/encounter-shuffler-hashes.dat')
@@ -231,6 +244,12 @@ function plugin.on_game_load(data, settings)
 	end
 end
 
+local function subtract_swap()
+	read_data('output-info/remaining-swaps.txt')
+	log_console("Read Data: ", swaps_remaining)
+	write_data('output-info/remaining-swaps.txt', swaps_remaining - 1)
+end
+
 function plugin.on_frame(data, settings)
 	-- Detect resets, savestate load or rewind (or turbo if "Run lua scripts when turboing" is disabled)
 	local inputs = joypad.get()
@@ -271,6 +290,7 @@ function plugin.on_frame(data, settings)
 			debug_timer = -delay
 			swap_game_delay(delay)
 			swap_scheduled = true
+			if settings.SubtractFromRemainingSwaps then	subtract_swap() end
 			if not settings.SuppressLog or settings.DebugSingleGame then
 				log_console('Encounter Shuffler: swap scheduled for %s (frame: %d, delay: %d)', tag, frames_since_restart, delay)
 			end

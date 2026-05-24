@@ -91,7 +91,7 @@ end
 local gamedata = {
 	['Lufia_2_SNES']={ -- Lufia 2 SNES
 		func=encounter_swap,
-		inEncounter=function() return memory.read_u8(0x0071, "WRAM") == 0x0000 end, --TODO: Fix swap on save load
+		inEncounter=function() return memory.read_u8(0x10EE, "WRAM") == 0x0004 end, --TODO: Fix swap on save load
 		allow_swap=function() return true end,
 	},
 	['FF1_NES']={ -- Final Fantasy 1 NES
